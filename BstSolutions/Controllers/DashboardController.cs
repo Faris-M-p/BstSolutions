@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.Controllers;
 
+// [Authorize] — enable when authentication is added (Task 13).
 public class DashboardController : Controller
 {
     private readonly IDashboardService _dashboardService;
@@ -13,9 +14,9 @@ public class DashboardController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        // Dashboard implementation will be added in a later step.
-        return View();
+        var model = await _dashboardService.GetDashboardAsync(cancellationToken);
+        return View(model);
     }
 }

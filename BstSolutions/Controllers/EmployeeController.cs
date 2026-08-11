@@ -1,9 +1,11 @@
+using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Employee;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.Controllers;
 
+// [Authorize] — enable when authentication is added (Task 13).
 public class EmployeeController : Controller
 {
     private readonly IEmployeeService _employeeService;
@@ -14,10 +16,10 @@ public class EmployeeController : Controller
     }
 
     [HttpGet]
-    public IActionResult Index()
+    public async Task<IActionResult> Index(CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
-        return View();
+        var employees = await _employeeService.GetEmployeesAsync(cancellationToken);
+        return View(employees);
     }
 
     [HttpGet]
@@ -28,34 +30,57 @@ public class EmployeeController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Create(CreateEmployeeViewModel model)
+    public async Task<IActionResult> Create(CreateEmployeeViewModel model, CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _employeeService.CreateAsync(model, cancellationToken);
+            TempData["Success"] = "Employee created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
     }
 
     [HttpGet]
-    public IActionResult Edit(int id)
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
-        return View(new EditEmployeeViewModel { Id = id });
+        var employee = await _employeeService.GetByIdAsync(id, cancellationToken);
+        if (employee is null)
+        {
+            return NotFound();
+        }
+
+        return View(employee);
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(EditEmployeeViewModel model)
+    public async Task<IActionResult> Edit(EditEmployeeViewModel model, CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
         if (!ModelState.IsValid)
         {
             return View(model);
         }
 
-        return RedirectToAction(nameof(Index));
+        try
+        {
+            await _employeeService.UpdateAsync(model, cancellationToken);
+            TempData["Success"] = "Employee updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            return View(model);
+        }
     }
 }

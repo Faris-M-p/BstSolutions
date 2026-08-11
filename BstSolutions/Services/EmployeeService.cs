@@ -1,3 +1,5 @@
+using BstSolutions.Common;
+using BstSolutions.Models;
 using BstSolutions.Repositories.Interfaces;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Employee;
@@ -13,27 +15,89 @@ public class EmployeeService : IEmployeeService
         _employeeRepository = employeeRepository;
     }
 
-    public Task<List<EditEmployeeViewModel>> GetEmployeesAsync(CancellationToken cancellationToken = default)
+    public async Task<List<EmployeeListItemViewModel>> GetEmployeesAsync(CancellationToken cancellationToken = default)
     {
-        // Business logic will be implemented in a later step.
-        throw new NotImplementedException();
+        var employees = await _employeeRepository.GetAllAsync(cancellationToken);
+        return employees.Select(MapToListItem).ToList();
     }
 
-    public Task<EditEmployeeViewModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
+    public async Task<List<EmployeeListItemViewModel>> GetActiveEmployeesAsync(CancellationToken cancellationToken = default)
     {
-        // Business logic will be implemented in a later step.
-        throw new NotImplementedException();
+        var employees = await _employeeRepository.GetAllAsync(cancellationToken);
+        return employees.Where(e => e.IsActive).Select(MapToListItem).ToList();
     }
 
-    public Task CreateAsync(CreateEmployeeViewModel model, CancellationToken cancellationToken = default)
+    public async Task<EditEmployeeViewModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Business logic will be implemented in a later step.
-        throw new NotImplementedException();
+        var employee = await _employeeRepository.GetByIdAsync(id, cancellationToken);
+        if (employee is null)
+        {
+            return null;
+        }
+
+        return new EditEmployeeViewModel
+        {
+            Id = employee.Id,
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            Email = employee.Email,
+            IsActive = employee.IsActive
+        };
     }
 
-    public Task UpdateAsync(EditEmployeeViewModel model, CancellationToken cancellationToken = default)
+    public async Task CreateAsync(CreateEmployeeViewModel model, CancellationToken cancellationToken = default)
     {
-        // Business logic will be implemented in a later step.
-        throw new NotImplementedException();
+        var email = model.Email.Trim();
+
+        if (await _employeeRepository.EmailExistsAsync(email, cancellationToken: cancellationToken))
+        {
+            throw new BusinessException("An employee with this email already exists.");
+        }
+
+        var employee = new Employee
+        {
+            FirstName = model.FirstName.Trim(),
+            LastName = model.LastName.Trim(),
+            Email = email,
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
+        };
+
+        await _employeeRepository.AddAsync(employee, cancellationToken);
+        await _employeeRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(EditEmployeeViewModel model, CancellationToken cancellationToken = default)
+    {
+        var employee = await _employeeRepository.GetByIdAsync(model.Id, cancellationToken)
+            ?? throw new BusinessException("Employee not found.");
+
+        var email = model.Email.Trim();
+
+        if (await _employeeRepository.EmailExistsAsync(email, model.Id, cancellationToken))
+        {
+            throw new BusinessException("An employee with this email already exists.");
+        }
+
+        employee.FirstName = model.FirstName.Trim();
+        employee.LastName = model.LastName.Trim();
+        employee.Email = email;
+        employee.IsActive = model.IsActive;
+
+        await _employeeRepository.UpdateAsync(employee, cancellationToken);
+        await _employeeRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    private static EmployeeListItemViewModel MapToListItem(Employee employee)
+    {
+        return new EmployeeListItemViewModel
+        {
+            Id = employee.Id,
+            FirstName = employee.FirstName,
+            LastName = employee.LastName,
+            Email = employee.Email,
+            IsActive = employee.IsActive,
+            CreatedDate = employee.CreatedDate
+        };
     }
 }

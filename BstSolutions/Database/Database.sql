@@ -4,9 +4,9 @@
     Creates a NEW database using the latest master definitions.
     Does NOT depend on historical patches.
 
-    Run with sqlcmd from the Database folder, for example:
+    Run with sqlcmd from the Database folder:
 
-      sqlcmd -S localhost -E -i Database.sql
+      sqlcmd -S .\SQLEXPRESS -E -i Database.sql
 
     Or from SSMS with SQLCMD Mode enabled.
 */

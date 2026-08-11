@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using BstSolutions.Common.Enums;
+using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.ViewModels.Task;
 
@@ -32,4 +33,7 @@ public class EditTaskViewModel
     [DataType(DataType.Date)]
     [Display(Name = "Due Date")]
     public DateTime DueDate { get; set; }
+
+    [HiddenInput]
+    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }

@@ -8,6 +8,8 @@ public interface ITaskService
 
     Task<EditTaskViewModel?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
 
+    Task<TaskDetailsViewModel?> GetDetailsAsync(int id, CancellationToken cancellationToken = default);
+
     Task CreateAsync(CreateTaskViewModel model, CancellationToken cancellationToken = default);
 
     Task UpdateAsync(EditTaskViewModel model, CancellationToken cancellationToken = default);

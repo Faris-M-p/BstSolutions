@@ -1,10 +1,163 @@
 @model BstSolutions.ViewModels.Task.TaskListViewModel
+@using BstSolutions.Common.Enums
 @{
     ViewData["Title"] = "Tasks";
+    var filter = Model.Filter;
 }
 
-<h1>Tasks</h1>
-<p>Task list / filter placeholder. Implementation will be added later.</p>
-<p>
-    <a asp-action="Create">Create Task</a>
-</p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Tasks</h1>
+    <a class="btn btn-primary" asp-action="Create">Create Task</a>
+</div>
+
+<form method="get" class="row g-2 mb-3">
+    <div class="col-md-2">
+        <label class="form-label">Employee</label>
+        <select name="EmployeeId" class="form-select" asp-items="ViewBag.Employees">
+            <option value="">All</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Status</label>
+        <select name="Status" class="form-select">
+            <option value="">All</option>
+            @foreach (WorkTaskStatus status in Enum.GetValues(typeof(WorkTaskStatus)))
+            {
+                if (filter.Status == status)
+                {
+                    <option value="@((int)status)" selected>@status</option>
+                }
+                else
+                {
+                    <option value="@((int)status)">@status</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Priority</label>
+        <select name="Priority" class="form-select">
+            <option value="">All</option>
+            @foreach (Priority priority in Enum.GetValues(typeof(Priority)))
+            {
+                if (filter.Priority == priority)
+                {
+                    <option value="@((int)priority)" selected>@priority</option>
+                }
+                else
+                {
+                    <option value="@((int)priority)">@priority</option>
+                }
+            }
+        </select>
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Search</label>
+        <input name="Search" value="@filter.Search" class="form-control" placeholder="Title, description, employee" />
+    </div>
+    <div class="col-md-1">
+        <label class="form-label">Sort</label>
+        <select name="SortBy" class="form-select">
+            <option value="createddate" selected="@(string.IsNullOrEmpty(filter.SortBy) || filter.SortBy == "createddate")">Created</option>
+            <option value="duedate" selected="@(filter.SortBy == "duedate")">Due</option>
+            <option value="priority" selected="@(filter.SortBy == "priority")">Priority</option>
+            <option value="employee" selected="@(filter.SortBy == "employee")">Employee</option>
+        </select>
+    </div>
+    <div class="col-md-1">
+        <label class="form-label">Dir</label>
+        <select name="SortDirection" class="form-select">
+            <option value="asc" selected="@(filter.SortDirection != "desc")">Asc</option>
+            <option value="desc" selected="@(filter.SortDirection == "desc")">Desc</option>
+        </select>
+    </div>
+    <div class="col-md-1 d-flex align-items-end">
+        <button type="submit" class="btn btn-secondary w-100">Filter</button>
+    </div>
+</form>
+
+<table class="table table-striped table-bordered" id="tasks-table">
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Title</th>
+            <th>Employee</th>
+            <th>Priority</th>
+            <th>Status</th>
+            <th>Due Date</th>
+            <th>Created Date</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+    @if (!Model.Tasks.Any())
+    {
+        <tr>
+            <td colspan="8" class="text-center">No tasks found.</td>
+        </tr>
+    }
+    else
+    {
+        var rowNumber = 0;
+        foreach (var item in Model.Tasks)
+        {
+            rowNumber++;
+            <tr data-task-id="@item.Id">
+                <td>@rowNumber</td>
+                <td>@item.Title</td>
+                <td>@item.EmployeeName</td>
+                <td>@item.Priority</td>
+                <td class="task-status">@item.Status</td>
+                <td>@item.DueDate.ToString("yyyy-MM-dd")</td>
+                <td>@item.CreatedDate.ToLocalTime().ToString("yyyy-MM-dd")</td>
+                <td class="text-nowrap">
+                    <a asp-action="Details" asp-route-id="@item.Id">Details</a> |
+                    <a asp-action="Edit" asp-route-id="@item.Id">Edit</a> |
+                    @if (item.Status != WorkTaskStatus.Completed)
+                    {
+                        <button type="button" class="btn btn-link btn-sm p-0 mark-complete" data-id="@item.Id">Mark Completed</button>
+                        <text> | </text>
+                        <form asp-action="Delete" method="post" class="d-inline" onsubmit="return confirm('Delete this task?');">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="id" value="@item.Id" />
+                            <button type="submit" class="btn btn-link btn-sm p-0 text-danger">Delete</button>
+                        </form>
+                    }
+                </td>
+            </tr>
+        }
+    }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.mark-complete').forEach(function (button) {
+            button.addEventListener('click', async function () {
+                const id = this.getAttribute('data-id');
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                const row = this.closest('tr');
+                const actionsCell = this.parentElement;
+
+                const response = await fetch('@Url.Action("Complete", "Task")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': token,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: 'id=' + encodeURIComponent(id)
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    row.querySelector('.task-status').textContent = 'Completed';
+                    actionsCell.querySelectorAll('.mark-complete, form').forEach(el => el.remove());
+                    alert(result.message);
+                } else {
+                    alert(result.message || 'Unable to complete task.');
+                }
+            });
+        });
+    </script>
+}

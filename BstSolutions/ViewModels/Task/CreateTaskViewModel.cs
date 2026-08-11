@@ -15,6 +15,7 @@ public class CreateTaskViewModel
     public string? Description { get; set; }
 
     [Required]
+    [Range(1, int.MaxValue, ErrorMessage = "Please select an employee.")]
     [Display(Name = "Employee")]
     public int EmployeeId { get; set; }
 

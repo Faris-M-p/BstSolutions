@@ -10,6 +10,8 @@
 
     Status INT values (match BstSolutions.Common.Enums.WorkTaskStatus):
         1 = New, 2 = InProgress, 3 = Completed, 4 = Cancelled
+
+    RowVersion = optimistic concurrency token.
 */
 
 IF OBJECT_ID(N'dbo.WorkTasks', N'U') IS NULL
@@ -25,6 +27,7 @@ BEGIN
         DueDate        DATE            NOT NULL,
         CreatedDate    DATETIME2(7)    NOT NULL CONSTRAINT DF_WorkTasks_CreatedDate DEFAULT (SYSUTCDATETIME()),
         CompletedDate  DATETIME2(7)    NULL,
+        RowVersion     ROWVERSION      NOT NULL,
 
         CONSTRAINT PK_WorkTasks PRIMARY KEY CLUSTERED (ID_WorkTask),
         CONSTRAINT FK_WorkTasks_Employee

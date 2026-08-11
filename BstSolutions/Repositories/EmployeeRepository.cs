@@ -16,32 +16,41 @@ public class EmployeeRepository : IEmployeeRepository
 
     public Task<List<Employee>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        return _dbContext.Employees
+            .AsNoTracking()
+            .OrderBy(e => e.FirstName)
+            .ThenBy(e => e.LastName)
+            .ToListAsync(cancellationToken);
     }
 
     public Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        return _dbContext.Employees
+            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
 
     public Task<bool> EmailExistsAsync(string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        var query = _dbContext.Employees.AsNoTracking()
+            .Where(e => e.Email == email);
+
+        if (excludeEmployeeId.HasValue)
+        {
+            query = query.Where(e => e.Id != excludeEmployeeId.Value);
+        }
+
+        return query.AnyAsync(cancellationToken);
     }
 
-    public Task AddAsync(Employee employee, CancellationToken cancellationToken = default)
+    public async Task AddAsync(Employee employee, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        await _dbContext.Employees.AddAsync(employee, cancellationToken);
     }
 
     public Task UpdateAsync(Employee employee, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        _dbContext.Employees.Update(employee);
+        return Task.CompletedTask;
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)

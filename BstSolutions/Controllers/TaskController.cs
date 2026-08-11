@@ -1,87 +1,166 @@
+using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Task;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BstSolutions.Controllers;
 
+// [Authorize] — task create/edit/delete should require authenticated users (Task 13).
 public class TaskController : Controller
 {
     private readonly ITaskService _taskService;
+    private readonly IEmployeeService _employeeService;
 
-    public TaskController(ITaskService taskService)
+    public TaskController(ITaskService taskService, IEmployeeService employeeService)
     {
         _taskService = taskService;
+        _employeeService = employeeService;
     }
 
     [HttpGet]
-    public IActionResult Index(TaskFilterViewModel filter)
+    public async Task<IActionResult> Index(TaskFilterViewModel filter, CancellationToken cancellationToken)
     {
-        // CRUD / filtering implementation will be added in a later step.
-        return View(new TaskListViewModel { Filter = filter });
+        var model = await _taskService.GetTasksAsync(filter, cancellationToken);
+        await PopulateFilterLookupsAsync(filter.EmployeeId, cancellationToken);
+        return View(model);
     }
 
     [HttpGet]
-    public IActionResult Create()
+    public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
-        return View(new CreateTaskViewModel());
+        await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
+        return View(new CreateTaskViewModel
+        {
+            DueDate = DateTime.Today,
+            Priority = Common.Enums.Priority.Medium
+        });
     }
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Create(CreateTaskViewModel model)
+    public async Task<IActionResult> Create(CreateTaskViewModel model, CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
         if (!ModelState.IsValid)
         {
+            await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
             return View(model);
+        }
+
+        try
+        {
+            await _taskService.CreateAsync(model, cancellationToken);
+            TempData["Success"] = "Task created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
+            return View(model);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
+    {
+        var model = await _taskService.GetByIdAsync(id, cancellationToken);
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(EditTaskViewModel model, CancellationToken cancellationToken)
+    {
+        if (!ModelState.IsValid)
+        {
+            await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
+            return View(model);
+        }
+
+        try
+        {
+            await _taskService.UpdateAsync(model, cancellationToken);
+            TempData["Success"] = "Task updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.Message);
+            await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
+            return View(model);
+        }
+    }
+
+    [HttpGet]
+    public async Task<IActionResult> Details(int id, CancellationToken cancellationToken)
+    {
+        var model = await _taskService.GetDetailsAsync(id, cancellationToken);
+        if (model is null)
+        {
+            return NotFound();
+        }
+
+        return View(model);
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _taskService.DeleteAsync(id, cancellationToken);
+            TempData["Success"] = "Task deleted successfully.";
+        }
+        catch (BusinessException ex)
+        {
+            TempData["Error"] = ex.Message;
         }
 
         return RedirectToAction(nameof(Index));
     }
 
-    [HttpGet]
-    public IActionResult Edit(int id)
-    {
-        // CRUD implementation will be added in a later step.
-        return View(new EditTaskViewModel { Id = id });
-    }
-
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public IActionResult Edit(EditTaskViewModel model)
+    public async Task<IActionResult> Complete(int id, CancellationToken cancellationToken)
     {
-        // CRUD implementation will be added in a later step.
-        if (!ModelState.IsValid)
+        try
         {
-            return View(model);
+            await _taskService.CompleteAsync(id, cancellationToken);
+            return Json(new { success = true, message = "Task completed successfully" });
         }
-
-        return RedirectToAction(nameof(Index));
+        catch (BusinessException ex)
+        {
+            return Json(new { success = false, message = ex.Message });
+        }
     }
 
-    [HttpGet]
-    public IActionResult Details(int id)
+    private async Task PopulateEmployeeOptionsAsync(bool activeOnly, CancellationToken cancellationToken)
     {
-        // Details implementation will be added in a later step.
-        return View(new EditTaskViewModel { Id = id });
+        var employees = activeOnly
+            ? await _employeeService.GetActiveEmployeesAsync(cancellationToken)
+            : await _employeeService.GetEmployeesAsync(cancellationToken);
+
+        ViewBag.Employees = new SelectList(
+            employees.Select(e => new { e.Id, Name = e.FullName }),
+            "Id",
+            "Name");
     }
 
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Delete(int id)
+    private async Task PopulateFilterLookupsAsync(int? selectedEmployeeId, CancellationToken cancellationToken)
     {
-        // Delete implementation will be added in a later step.
-        return RedirectToAction(nameof(Index));
-    }
-
-    /// <summary>
-    /// AJAX endpoint skeleton for marking a task completed without a full page reload.
-    /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public IActionResult Complete(int id)
-    {
-        // AJAX complete implementation will be added in a later step.
-        return Json(new { success = false, message = "Not implemented yet." });
+        var employees = await _employeeService.GetEmployeesAsync(cancellationToken);
+        ViewBag.Employees = new SelectList(
+            employees.Select(e => new { e.Id, Name = e.FullName }),
+            "Id",
+            "Name",
+            selectedEmployeeId);
     }
 }

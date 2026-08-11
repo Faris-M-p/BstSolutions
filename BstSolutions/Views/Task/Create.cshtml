@@ -3,41 +3,42 @@
     ViewData["Title"] = "Create Task";
 }
 
-<h1>Create Task</h1>
-<p>Create task form placeholder. Implementation will be added later.</p>
+<h1 class="h3 mb-3">Create Task</h1>
 
-<form asp-action="Create" method="post">
+<form asp-action="Create" method="post" class="col-md-8">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly"></div>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
-    <div>
-        <label asp-for="Title"></label>
-        <input asp-for="Title" />
-        <span asp-validation-for="Title"></span>
+    <div class="mb-3">
+        <label asp-for="Title" class="form-label"></label>
+        <input asp-for="Title" class="form-control" />
+        <span asp-validation-for="Title" class="text-danger"></span>
     </div>
-    <div>
-        <label asp-for="Description"></label>
-        <textarea asp-for="Description"></textarea>
-        <span asp-validation-for="Description"></span>
+    <div class="mb-3">
+        <label asp-for="Description" class="form-label"></label>
+        <textarea asp-for="Description" class="form-control" rows="4"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
     </div>
-    <div>
-        <label asp-for="EmployeeId"></label>
-        <input asp-for="EmployeeId" />
-        <span asp-validation-for="EmployeeId"></span>
+    <div class="mb-3">
+        <label asp-for="EmployeeId" class="form-label"></label>
+        <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.Employees">
+            <option value="">Select employee</option>
+        </select>
+        <span asp-validation-for="EmployeeId" class="text-danger"></span>
     </div>
-    <div>
-        <label asp-for="Priority"></label>
-        <select asp-for="Priority" asp-items="Html.GetEnumSelectList<BstSolutions.Common.Enums.Priority>()"></select>
-        <span asp-validation-for="Priority"></span>
+    <div class="mb-3">
+        <label asp-for="Priority" class="form-label"></label>
+        <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<BstSolutions.Common.Enums.Priority>()"></select>
+        <span asp-validation-for="Priority" class="text-danger"></span>
     </div>
-    <div>
-        <label asp-for="DueDate"></label>
-        <input asp-for="DueDate" />
-        <span asp-validation-for="DueDate"></span>
+    <div class="mb-3">
+        <label asp-for="DueDate" class="form-label"></label>
+        <input asp-for="DueDate" class="form-control" type="date" />
+        <span asp-validation-for="DueDate" class="text-danger"></span>
     </div>
 
-    <button type="submit">Save</button>
-    <a asp-action="Index">Cancel</a>
+    <button type="submit" class="btn btn-primary">Save</button>
+    <a class="btn btn-secondary" asp-action="Index">Cancel</a>
 </form>
 
 @section Scripts {

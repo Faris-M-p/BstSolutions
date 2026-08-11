@@ -1,8 +1,8 @@
 using BstSolutions.Common.Enums;
 
-namespace BstSolutions.Models;
+namespace BstSolutions.ViewModels.Task;
 
-public class WorkTask
+public class TaskDetailsViewModel
 {
     public int Id { get; set; }
 
@@ -11,6 +11,8 @@ public class WorkTask
     public string? Description { get; set; }
 
     public int EmployeeId { get; set; }
+
+    public string EmployeeName { get; set; } = string.Empty;
 
     public Priority Priority { get; set; }
 
@@ -21,8 +23,4 @@ public class WorkTask
     public DateTime CreatedDate { get; set; }
 
     public DateTime? CompletedDate { get; set; }
-
-    public byte[] RowVersion { get; set; } = Array.Empty<byte>();
-
-    public Employee Employee { get; set; } = null!;
 }

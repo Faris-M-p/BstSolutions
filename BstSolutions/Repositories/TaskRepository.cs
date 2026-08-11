@@ -1,6 +1,7 @@
 using BstSolutions.Data;
 using BstSolutions.Models;
 using BstSolutions.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace BstSolutions.Repositories;
 
@@ -20,32 +21,37 @@ public class TaskRepository : ITaskRepository
 
     public Task<WorkTask?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        return _dbContext.WorkTasks
+            .Include(t => t.Employee)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
     }
 
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        return _dbContext.WorkTasks.AsNoTracking()
+            .AnyAsync(t => t.Id == id, cancellationToken);
     }
 
-    public Task AddAsync(WorkTask workTask, CancellationToken cancellationToken = default)
+    public async Task AddAsync(WorkTask workTask, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        await _dbContext.WorkTasks.AddAsync(workTask, cancellationToken);
     }
 
     public Task UpdateAsync(WorkTask workTask, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        _dbContext.WorkTasks.Update(workTask);
+        return Task.CompletedTask;
+    }
+
+    public void SetOriginalRowVersion(WorkTask workTask, byte[] rowVersion)
+    {
+        _dbContext.Entry(workTask).Property(t => t.RowVersion).OriginalValue = rowVersion;
     }
 
     public Task DeleteAsync(WorkTask workTask, CancellationToken cancellationToken = default)
     {
-        // Implementation will be added in a later step.
-        throw new NotImplementedException();
+        _dbContext.WorkTasks.Remove(workTask);
+        return Task.CompletedTask;
     }
 
     public Task SaveChangesAsync(CancellationToken cancellationToken = default)

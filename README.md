@@ -2,9 +2,9 @@
 
 ASP.NET Core MVC application for managing employees and work tasks.
 
-This repository currently contains the **clean architecture skeleton only**. Business CRUD, filtering, dashboard calculations, and AJAX complete-task behavior will be implemented step-by-step.
+This repository contains a working Task Management System for the ASP.NET Core MVC machine test.
 
-Project / assembly name: `BstSolutions` (existing solution already connected to Git).
+Project / assembly name: `BstSolutions`.
 
 ---
 
@@ -16,7 +16,8 @@ The application will support:
 - Task create / view / edit / delete / mark completed
 - Filtering and sorting across tasks
 - Dashboard summary counts and upcoming tasks
-- AJAX mark-complete without full page reload (later)
+- Optimistic concurrency with SQL Server `RowVersion`
+- AJAX mark-complete without full page reload
 
 ---
 
@@ -230,22 +231,27 @@ C# entities keep clean interview-friendly names (`Id`, `EmployeeId`) and map to 
 - `Employee.Id` → `ID_Employee`
 - `WorkTask.Id` → `ID_WorkTask`
 - `WorkTask.EmployeeId` → `FK_Employee`
-
-No extra concurrency columns were added to keep the schema simple.
+- `WorkTask.RowVersion` → SQL Server `ROWVERSION`
 
 ---
 
 ## 11. Concurrency approach (Task 12)
 
-The machine test allows implementing concurrency **or** explaining it in the README.
+I used optimistic concurrency with SQL Server RowVersion.
 
-How this app could prevent silent overwrites:
+1. The original `RowVersion` is loaded with the task and sent back with the update (hidden field on the Edit form).
+2. EF Core includes that value in the update condition.
+3. If another user has already modified the record, the `RowVersion` does not match.
+4. EF Core detects the concurrency conflict (`DbUpdateConcurrencyException`).
+5. We show the user a conflict message instead of silently overwriting the other user's changes.
 
-1. Add a SQL Server `RowVersion` concurrency token later if required.
-2. Send the original value with the update.
-3. EF Core includes it in the update condition.
-4. If another user already changed the row, EF Core raises `DbUpdateConcurrencyException`.
-5. Show a conflict message instead of silently overwriting.
+Configured with:
+
+```csharp
+entity.Property(t => t.RowVersion).IsRowVersion();
+```
+
+Schema is created through SQL scripts (`Database.sql`), not EF migrations.
 
 ---
 
@@ -358,16 +364,11 @@ BstSolutions/
 
 ---
 
-## 16. Future implementation steps
+## 16. Future optional enhancements
 
-1. Implement `EmployeeRepository` / `EmployeeService` (list, create, edit, duplicate email, active flag).
-2. Implement `TaskRepository` / `TaskService` (CRUD, complete, delete rules).
-3. Implement filtering + sorting via repository `IQueryable` + service composition.
-4. Implement `DashboardService` counts and five nearest upcoming tasks.
-5. Build functional Razor UI and client validation.
-6. Add Fetch API AJAX for mark completed → JSON.
-7. Apply `[Authorize]` when authentication is decided.
-8. Optionally enable ASP.NET Core rate limiting middleware.
+1. Add ASP.NET Core Identity and enable `[Authorize]` on Employee/Task/Dashboard.
+2. Optionally enable ASP.NET Core rate limiting middleware.
+3. Add unit tests for service business rules.
 
 ---
 
