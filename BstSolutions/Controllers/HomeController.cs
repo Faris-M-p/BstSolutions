@@ -3,9 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.Controllers;
 
-/// <summary>
-/// Minimal home/error controller used by global exception handling.
-/// </summary>
 public class HomeController : Controller
 {
     [HttpGet]

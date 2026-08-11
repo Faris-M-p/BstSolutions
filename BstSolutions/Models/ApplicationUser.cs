@@ -1,8 +1,5 @@
 namespace BstSolutions.Models;
 
-/// <summary>
-/// Application login user (not an Employee). Stored in ApplicationUsers.
-/// </summary>
 public class ApplicationUser
 {
     public int Id { get; set; }

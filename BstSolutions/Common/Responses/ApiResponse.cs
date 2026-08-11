@@ -6,9 +6,6 @@ public class ApiResponse
 
     public string UserMessage { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Technical context for developers. Never display in the frontend.
-    /// </summary>
     public string? DeveloperMessage { get; set; }
 
     public string? ErrorCode { get; set; }

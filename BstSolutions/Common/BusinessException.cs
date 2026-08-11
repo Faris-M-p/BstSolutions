@@ -1,10 +1,5 @@
 namespace BstSolutions.Common;
 
-/// <summary>
-/// Expected business-rule failure.
-/// Controllers map UserMessage to ModelState/ApiResponse.
-/// Middleware maps unexpected exceptions only (not this type when caught in controllers).
-/// </summary>
 public class BusinessException : Exception
 {
     public string UserMessage { get; }

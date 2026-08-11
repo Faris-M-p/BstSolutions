@@ -1,9 +1,5 @@
 namespace BstSolutions.Models;
 
-/// <summary>
-/// EF Core entity mapped to the Employees table.
-/// SQL primary key column: ID_Employee (mapped via Fluent API).
-/// </summary>
 public class Employee
 {
     public int Id { get; set; }

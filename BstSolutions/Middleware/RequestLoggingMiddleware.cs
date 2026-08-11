@@ -2,10 +2,6 @@ using System.Diagnostics;
 
 namespace BstSolutions.Middleware;
 
-/// <summary>
-/// Logs each HTTP request/response (method, path, status, duration, user).
-/// Does not handle exceptions — GlobalExceptionMiddleware remains responsible.
-/// </summary>
 public class RequestLoggingMiddleware
 {
     private readonly RequestDelegate _next;
