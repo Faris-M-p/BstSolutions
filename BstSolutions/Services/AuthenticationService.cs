@@ -34,8 +34,8 @@ public class AuthenticationService : IAuthenticationService
             return null;
         }
 
-        var result = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
-        if (result == PasswordVerificationResult.Failed)
+        var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
+        if (verification == PasswordVerificationResult.Failed)
         {
             return null;
         }

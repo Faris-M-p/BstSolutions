@@ -1,4 +1,4 @@
-using BstSolutions.Common;
+using BstSolutions.Common.Responses;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Task;
 using Microsoft.AspNetCore.Authorization;
@@ -28,7 +28,6 @@ public class TaskController : Controller
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
@@ -40,7 +39,6 @@ public class TaskController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateTaskViewModel model, CancellationToken cancellationToken)
     {
@@ -50,22 +48,19 @@ public class TaskController : Controller
             return View(model);
         }
 
-        try
+        var result = await _taskService.CreateAsync(model, cancellationToken);
+        if (!result.Success)
         {
-            await _taskService.CreateAsync(model, cancellationToken);
-            TempData["Success"] = "Task created successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (BusinessException ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(string.Empty, result.UserMessage);
             await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
             return View(model);
         }
+
+        TempData["Success"] = result.UserMessage;
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var model = await _taskService.GetByIdAsync(id, cancellationToken);
@@ -79,7 +74,6 @@ public class TaskController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditTaskViewModel model, CancellationToken cancellationToken)
     {
@@ -89,18 +83,16 @@ public class TaskController : Controller
             return View(model);
         }
 
-        try
+        var result = await _taskService.UpdateAsync(model, cancellationToken);
+        if (!result.Success)
         {
-            await _taskService.UpdateAsync(model, cancellationToken);
-            TempData["Success"] = "Task updated successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (BusinessException ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(string.Empty, result.UserMessage);
             await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
             return View(model);
         }
+
+        TempData["Success"] = result.UserMessage;
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -116,37 +108,40 @@ public class TaskController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        try
+        var result = await _taskService.DeleteAsync(id, cancellationToken);
+        if (!result.Success)
         {
-            await _taskService.DeleteAsync(id, cancellationToken);
-            TempData["Success"] = "Task deleted successfully.";
+            TempData["Error"] = result.UserMessage;
         }
-        catch (BusinessException ex)
+        else
         {
-            TempData["Error"] = ex.Message;
+            TempData["Success"] = result.UserMessage;
         }
 
         return RedirectToAction(nameof(Index));
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id, CancellationToken cancellationToken)
     {
-        try
+        var result = await _taskService.CompleteAsync(id, cancellationToken);
+        if (!result.Success)
         {
-            await _taskService.CompleteAsync(id, cancellationToken);
-            return Json(new { success = true, message = "Task completed successfully" });
+            var statusCode = result.ErrorCode switch
+            {
+                "TASK_NOT_FOUND" => StatusCodes.Status404NotFound,
+                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
+                _ => StatusCodes.Status400BadRequest
+            };
+
+            return StatusCode(statusCode, ApiResponse.Fail(result.UserMessage, result.ErrorCode));
         }
-        catch (BusinessException ex)
-        {
-            return Json(new { success = false, message = ex.Message });
-        }
+
+        return Ok(ApiResponse.Ok(result.UserMessage));
     }
 
     private async Task PopulateEmployeeOptionsAsync(bool activeOnly, CancellationToken cancellationToken)

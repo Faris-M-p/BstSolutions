@@ -124,20 +124,32 @@ public class TaskService : ITaskService
     {
         if (model.EmployeeId <= 0)
         {
-            throw new BusinessException("A task cannot be created without an assigned employee.");
+            throw new BusinessException(
+                "A task cannot be created without an assigned employee.",
+                "Create task rejected because EmployeeId was missing.",
+                "TASK_EMPLOYEE_REQUIRED");
         }
 
         var employee = await _employeeRepository.GetByIdAsync(model.EmployeeId, cancellationToken)
-            ?? throw new BusinessException("Assigned employee was not found.");
+            ?? throw new BusinessException(
+                "Assigned employee was not found.",
+                $"Create task failed. Employee Id {model.EmployeeId} does not exist.",
+                "TASK_EMPLOYEE_NOT_FOUND");
 
         if (!employee.IsActive)
         {
-            throw new BusinessException("Only active employees can be assigned to new tasks.");
+            throw new BusinessException(
+                "Only active employees can be assigned to new tasks.",
+                $"Create task failed. Employee Id {model.EmployeeId} is inactive.",
+                "TASK_EMPLOYEE_INACTIVE");
         }
 
         if (model.DueDate.Date < DateTime.Today)
         {
-            throw new BusinessException("Due date cannot be earlier than today's date.");
+            throw new BusinessException(
+                "Due date cannot be earlier than today's date.",
+                "Create task failed because DueDate is in the past.",
+                "TASK_INVALID_DUE_DATE");
         }
 
         var task = new WorkTask
@@ -159,20 +171,31 @@ public class TaskService : ITaskService
     public async Task UpdateAsync(EditTaskViewModel model, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(model.Id, cancellationToken)
-            ?? throw new BusinessException("Task not found.");
+            ?? throw new BusinessException(
+                "Task not found.",
+                $"Update failed. Task Id {model.Id} was not found.",
+                "TASK_NOT_FOUND");
 
         if (model.EmployeeId <= 0)
         {
-            throw new BusinessException("A task must have an assigned employee.");
+            throw new BusinessException(
+                "A task must have an assigned employee.",
+                "Update task rejected because EmployeeId was missing.",
+                "TASK_EMPLOYEE_REQUIRED");
         }
 
         var employee = await _employeeRepository.GetByIdAsync(model.EmployeeId, cancellationToken)
-            ?? throw new BusinessException("Assigned employee was not found.");
+            ?? throw new BusinessException(
+                "Assigned employee was not found.",
+                $"Update task failed. Employee Id {model.EmployeeId} does not exist.",
+                "TASK_EMPLOYEE_NOT_FOUND");
 
-        // Reassignment to a new employee still requires an active employee.
         if (task.EmployeeId != model.EmployeeId && !employee.IsActive)
         {
-            throw new BusinessException("Only active employees can be assigned to tasks.");
+            throw new BusinessException(
+                "Only active employees can be assigned to tasks.",
+                $"Update task failed. Reassignment to inactive Employee Id {model.EmployeeId}.",
+                "TASK_EMPLOYEE_INACTIVE");
         }
 
         task.Title = model.Title.Trim();
@@ -182,7 +205,6 @@ public class TaskService : ITaskService
         task.DueDate = model.DueDate.Date;
 
         ApplyStatusChange(task, model.Status);
-
         _taskRepository.SetOriginalRowVersion(task, model.RowVersion);
 
         try
@@ -191,18 +213,35 @@ public class TaskService : ITaskService
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new BusinessException("This task was modified by another user. Please reload and try again.");
+            throw new BusinessException(
+                "This task was modified by another user. Please refresh and try again.",
+                $"Concurrency conflict while updating Task Id {model.Id}.",
+                "CONCURRENCY_CONFLICT");
         }
     }
 
     public async Task CompleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new BusinessException("Task not found.");
+            ?? throw new BusinessException(
+                "Task not found.",
+                $"Complete failed. Task Id {id} was not found.",
+                "TASK_NOT_FOUND");
+
+        if (task.Status == WorkTaskStatus.Cancelled)
+        {
+            throw new BusinessException(
+                "Task cannot be completed because it is already cancelled.",
+                $"Complete rejected for cancelled Task Id {id}.",
+                "TASK_INVALID_STATUS");
+        }
 
         if (task.Status == WorkTaskStatus.Completed)
         {
-            throw new BusinessException("Task is already completed.");
+            throw new BusinessException(
+                "Task is already completed.",
+                $"Complete rejected for already completed Task Id {id}.",
+                "TASK_ALREADY_COMPLETED");
         }
 
         ApplyStatusChange(task, WorkTaskStatus.Completed);
@@ -212,11 +251,17 @@ public class TaskService : ITaskService
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new BusinessException("Task not found.");
+            ?? throw new BusinessException(
+                "Task not found.",
+                $"Delete failed. Task Id {id} was not found.",
+                "TASK_NOT_FOUND");
 
         if (task.Status == WorkTaskStatus.Completed)
         {
-            throw new BusinessException("A completed task cannot be deleted.");
+            throw new BusinessException(
+                "A completed task cannot be deleted.",
+                $"Delete rejected for completed Task Id {id}.",
+                "TASK_COMPLETED_CANNOT_DELETE");
         }
 
         await _taskRepository.DeleteAsync(task, cancellationToken);

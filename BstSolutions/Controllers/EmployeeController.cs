@@ -1,4 +1,3 @@
-using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Employee;
 using Microsoft.AspNetCore.Authorization;
@@ -24,14 +23,12 @@ public class EmployeeController : Controller
     }
 
     [HttpGet]
-    [Authorize]
     public IActionResult Create()
     {
         return View(new CreateEmployeeViewModel());
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateEmployeeViewModel model, CancellationToken cancellationToken)
     {
@@ -40,21 +37,18 @@ public class EmployeeController : Controller
             return View(model);
         }
 
-        try
+        var result = await _employeeService.CreateAsync(model, cancellationToken);
+        if (!result.Success)
         {
-            await _employeeService.CreateAsync(model, cancellationToken);
-            TempData["Success"] = "Employee created successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (BusinessException ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(string.Empty, result.UserMessage);
             return View(model);
         }
+
+        TempData["Success"] = result.UserMessage;
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
-    [Authorize]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var employee = await _employeeService.GetByIdAsync(id, cancellationToken);
@@ -67,7 +61,6 @@ public class EmployeeController : Controller
     }
 
     [HttpPost]
-    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditEmployeeViewModel model, CancellationToken cancellationToken)
     {
@@ -76,16 +69,14 @@ public class EmployeeController : Controller
             return View(model);
         }
 
-        try
+        var result = await _employeeService.UpdateAsync(model, cancellationToken);
+        if (!result.Success)
         {
-            await _employeeService.UpdateAsync(model, cancellationToken);
-            TempData["Success"] = "Employee updated successfully.";
-            return RedirectToAction(nameof(Index));
-        }
-        catch (BusinessException ex)
-        {
-            ModelState.AddModelError(string.Empty, ex.Message);
+            ModelState.AddModelError(string.Empty, result.UserMessage);
             return View(model);
         }
+
+        TempData["Success"] = result.UserMessage;
+        return RedirectToAction(nameof(Index));
     }
 }

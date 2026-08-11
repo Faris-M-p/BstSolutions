@@ -51,7 +51,10 @@ public class EmployeeService : IEmployeeService
 
         if (await _employeeRepository.EmailExistsAsync(email, cancellationToken: cancellationToken))
         {
-            throw new BusinessException("An employee with this email already exists.");
+            throw new BusinessException(
+                "An employee with this email already exists.",
+                "Duplicate employee email detected.",
+                "EMPLOYEE_EMAIL_EXISTS");
         }
 
         var employee = new Employee
@@ -70,13 +73,19 @@ public class EmployeeService : IEmployeeService
     public async Task UpdateAsync(EditEmployeeViewModel model, CancellationToken cancellationToken = default)
     {
         var employee = await _employeeRepository.GetByIdAsync(model.Id, cancellationToken)
-            ?? throw new BusinessException("Employee not found.");
+            ?? throw new BusinessException(
+                "Employee not found.",
+                $"Employee Id {model.Id} was not found for update.",
+                "EMPLOYEE_NOT_FOUND");
 
         var email = model.Email.Trim();
 
         if (await _employeeRepository.EmailExistsAsync(email, model.Id, cancellationToken))
         {
-            throw new BusinessException("An employee with this email already exists.");
+            throw new BusinessException(
+                "An employee with this email already exists.",
+                "Duplicate employee email detected during update.",
+                "EMPLOYEE_EMAIL_EXISTS");
         }
 
         employee.FirstName = model.FirstName.Trim();

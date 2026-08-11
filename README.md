@@ -132,7 +132,7 @@ Master remains the latest definition
 
 - **sqlcmd** must be installed and available in PATH (`sqlcmd -?`)
 - Windows Integrated Authentication is used by default
-- Default instance in the `.bat` files: `.\SQLEXPRESS` (matches `appsettings.json`)
+- Default instance in the `.bat` files: `(localdb)\MSSQLLocalDB` (matches `appsettings.json`)
 - Edit `SERVER` / `DATABASE` at the top of the `.bat` files if needed
 
 ### Entry points
@@ -152,7 +152,7 @@ Preferred:
 Manual equivalent:
 
 ```bash
-sqlcmd -S .\SQLEXPRESS -E -b -i Database.sql
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -b -i Database.sql
 ```
 
 ---
@@ -168,7 +168,7 @@ Preferred:
 Manual equivalent:
 
 ```bash
-sqlcmd -S .\SQLEXPRESS -E -d TaskManagementSystem -b -i Database-Patch.sql
+sqlcmd -S "(localdb)\MSSQLLocalDB" -E -d TaskManagementSystem -b -i Database-Patch.sql
 ```
 
 Example `01_Tables/Patch.sql`:
@@ -360,7 +360,88 @@ If added later, use ASP.NET Core rate limiting middleware/configuration only.
 
 ---
 
-## 14. Error handling approach
+## 14. Response and Error Handling
+
+### ServiceResult (Controller ↔ Service)
+
+Expected business failures return `ServiceResult` / `ServiceResult<T>` (not HTTP types):
+
+| Field | Purpose |
+|---|---|
+| `Success` | Operation outcome |
+| `UserMessage` | Safe message for UI |
+| `DeveloperMessage` | Technical context (logs only) |
+| `ErrorCode` | Stable code e.g. `EMPLOYEE_EMAIL_EXISTS` |
+| `Data` | Optional payload |
+
+### ApiResponse (AJAX only)
+
+AJAX endpoints map `ServiceResult` → `ApiResponse` without sending `DeveloperMessage`.
+
+**Success (200)**
+```json
+{
+  "success": true,
+  "userMessage": "Task completed successfully.",
+  "errorCode": null,
+  "data": null
+}
+```
+
+**Business failure (400)**
+```json
+{
+  "success": false,
+  "userMessage": "An employee with this email already exists.",
+  "errorCode": "EMPLOYEE_EMAIL_EXISTS",
+  "data": null
+}
+```
+
+**Concurrency (409)**
+```json
+{
+  "success": false,
+  "userMessage": "This task was modified by another user. Please refresh and try again.",
+  "errorCode": "CONCURRENCY_CONFLICT"
+}
+```
+
+**Unexpected (500)** via `GlobalExceptionMiddleware`
+```json
+{
+  "success": false,
+  "userMessage": "Something went wrong. Please try again later. Reference: ABC12345.",
+  "errorCode": "INTERNAL_SERVER_ERROR"
+}
+```
+
+### Rules
+
+- Frontend shows **UserMessage only** (`result.userMessage`).
+- Never show `DeveloperMessage`, stack traces, SQL, or connection strings.
+- Unexpected exceptions are logged with full exception details + DeveloperMessage.
+- MVC Razor actions use `ModelState` / `TempData` + Views (not forced JSON).
+- Controllers do not wrap unexpected exceptions in try/catch.
+
+### Flow
+
+```text
+Expected business failure
+    → ServiceResult
+    → Controller (ModelState / ApiResponse)
+    → Frontend UserMessage
+
+Unexpected exception
+    → GlobalExceptionMiddleware
+    → ILogger (DeveloperMessage + exception)
+    → Safe ApiResponse / Error page
+    → Frontend UserMessage only
+```
+
+---
+
+## 15. Error handling approach
 
 `Middleware/GlobalExceptionMiddleware`:
 

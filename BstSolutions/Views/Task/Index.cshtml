@@ -153,9 +153,9 @@
                 if (result.success) {
                     row.querySelector('.task-status').textContent = 'Completed';
                     actionsCell.querySelectorAll('.mark-complete, form').forEach(el => el.remove());
-                    alert(result.message);
+                    alert(result.userMessage);
                 } else {
-                    alert(result.message || 'Unable to complete task.');
+                    alert(result.userMessage || 'Unable to complete task.');
                 }
             });
         });
