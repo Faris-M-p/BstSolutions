@@ -1,0 +1,45 @@
+@model BstSolutions.ViewModels.Task.CreateTaskViewModel
+@{
+    ViewData["Title"] = "Create Task";
+}
+
+<h1>Create Task</h1>
+<p>Create task form placeholder. Implementation will be added later.</p>
+
+<form asp-action="Create" method="post">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div>
+        <label asp-for="Title"></label>
+        <input asp-for="Title" />
+        <span asp-validation-for="Title"></span>
+    </div>
+    <div>
+        <label asp-for="Description"></label>
+        <textarea asp-for="Description"></textarea>
+        <span asp-validation-for="Description"></span>
+    </div>
+    <div>
+        <label asp-for="EmployeeId"></label>
+        <input asp-for="EmployeeId" />
+        <span asp-validation-for="EmployeeId"></span>
+    </div>
+    <div>
+        <label asp-for="Priority"></label>
+        <select asp-for="Priority" asp-items="Html.GetEnumSelectList<BstSolutions.Common.Enums.Priority>()"></select>
+        <span asp-validation-for="Priority"></span>
+    </div>
+    <div>
+        <label asp-for="DueDate"></label>
+        <input asp-for="DueDate" />
+        <span asp-validation-for="DueDate"></span>
+    </div>
+
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

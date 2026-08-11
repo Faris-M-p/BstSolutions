@@ -1,0 +1,41 @@
+@model BstSolutions.ViewModels.Employee.EditEmployeeViewModel
+@{
+    ViewData["Title"] = "Edit Employee";
+}
+
+<h1>Edit Employee</h1>
+<p>Edit employee form placeholder. Implementation will be added later.</p>
+
+<form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" />
+    <div asp-validation-summary="ModelOnly"></div>
+
+    <div>
+        <label asp-for="FirstName"></label>
+        <input asp-for="FirstName" />
+        <span asp-validation-for="FirstName"></span>
+    </div>
+    <div>
+        <label asp-for="LastName"></label>
+        <input asp-for="LastName" />
+        <span asp-validation-for="LastName"></span>
+    </div>
+    <div>
+        <label asp-for="Email"></label>
+        <input asp-for="Email" />
+        <span asp-validation-for="Email"></span>
+    </div>
+    <div>
+        <label asp-for="IsActive"></label>
+        <input asp-for="IsActive" />
+        <span asp-validation-for="IsActive"></span>
+    </div>
+
+    <button type="submit">Save</button>
+    <a asp-action="Index">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

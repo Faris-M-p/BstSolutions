@@ -1,0 +1,3 @@
+-- Uncomment only the required changes.
+-- :r .\Employees.sql
+-- :r .\WorkTasks.sql

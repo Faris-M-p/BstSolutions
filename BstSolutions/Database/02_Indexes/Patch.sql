@@ -1,0 +1,2 @@
+-- Uncomment only the required changes.
+-- :r .\WorkTasks.sql
