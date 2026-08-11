@@ -10,6 +10,8 @@ public class ApplicationDbContext : DbContext
     {
     }
 
+    public DbSet<ApplicationUser> ApplicationUsers => Set<ApplicationUser>();
+
     public DbSet<Employee> Employees => Set<Employee>();
 
     public DbSet<WorkTask> WorkTasks => Set<WorkTask>();
@@ -17,6 +19,22 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<ApplicationUser>(entity =>
+        {
+            entity.ToTable("ApplicationUsers");
+
+            entity.HasKey(u => u.Id);
+            entity.Property(u => u.Id).HasColumnName("ID_ApplicationUser");
+
+            entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
+            entity.HasIndex(u => u.Email).IsUnique();
+
+            entity.Property(u => u.PasswordHash).IsRequired().HasMaxLength(500);
+            entity.Property(u => u.IsActive).IsRequired();
+            entity.Property(u => u.Role).IsRequired().HasMaxLength(50);
+            entity.Property(u => u.CreatedDate).IsRequired();
+        });
 
         modelBuilder.Entity<Employee>(entity =>
         {

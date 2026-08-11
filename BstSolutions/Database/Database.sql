@@ -7,6 +7,9 @@
     Does NOT depend on Database-Patch.sql.
 
     Preferred: double-click Database-Create.bat
+
+    SeedData.sql inserts the demo admin user with a PasswordHasher hash
+    (never plain-text password).
 */
 
 :setvar DatabaseName "TaskManagementSystem"
@@ -23,6 +26,7 @@ GO
 
 PRINT 'Applying latest master table definitions...';
 GO
+:r .\01_Tables\ApplicationUsers.sql
 :r .\01_Tables\Employees.sql
 :r .\01_Tables\WorkTasks.sql
 

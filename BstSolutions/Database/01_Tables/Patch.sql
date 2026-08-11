@@ -3,5 +3,6 @@
 -- according to the project's database patch management guideline.
 --
 -- Uncomment only the required changes.
+-- :r .\ApplicationUsers.sql
 -- :r .\Employees.sql
 -- :r .\WorkTasks.sql

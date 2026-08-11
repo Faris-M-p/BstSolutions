@@ -1,9 +1,10 @@
 using BstSolutions.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.Controllers;
 
-// [Authorize] — enable when authentication is added (Task 13).
+[Authorize]
 public class DashboardController : Controller
 {
     private readonly IDashboardService _dashboardService;

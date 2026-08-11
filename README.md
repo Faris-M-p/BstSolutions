@@ -67,7 +67,7 @@ Rules:
 
 ## 4. Technology stack
 
-- .NET 8
+- .NET 8 or later (this machine uses .NET 10)
 - ASP.NET Core MVC
 - C#
 - Entity Framework Core (SQL Server provider)
@@ -93,10 +93,12 @@ Schema is owned by SQL scripts under `BstSolutions/Database/`.
 1. Double-click `Database/Database-Create.bat`
 2. It runs `sqlcmd` → `Database.sql`
 3. `Database.sql` creates `TaskManagementSystem` (if needed) and executes the latest **master** SQL files:
+   - `01_Tables/ApplicationUsers.sql`
    - `01_Tables/Employees.sql`
    - `01_Tables/WorkTasks.sql`
    - `02_Indexes/Indexes.sql`
    - `03_SeedData/SeedData.sql`
+4. Demo admin (`admin@gmail.com`) is seeded by `03_SeedData/SeedData.sql` with a **PasswordHasher** hash (not plain text).
 
 ### EXISTING DATABASE
 
@@ -280,25 +282,73 @@ Schema is created through SQL scripts (`Database.sql`), not EF migrations.
 
 ## 13. Security approach
 
-Prepared / to be applied during feature implementation:
-
 | Concern | Approach |
 |---|---|
-| Authorization | `[Authorize]` on controllers/actions when auth is introduced |
-| Anti-forgery | `[ValidateAntiForgeryToken]` on POST actions (already on skeletons) |
+| Authentication | Database-backed users + cookie authentication + ClaimsPrincipal |
+| Authorization | `[Authorize]` on create/edit/delete/complete actions |
+| Anti-forgery | `[ValidateAntiForgeryToken]` on POST actions |
 | Over-posting | ViewModels instead of binding entities directly |
 | Model validation | DataAnnotations + ModelState checks |
 | SQL injection | EF Core parameterized queries / LINQ |
 | XSS | Razor output encoding by default |
-| Secrets | Connection strings in config (not committed secrets for production) |
+| Passwords | ASP.NET Core `PasswordHasher<ApplicationUser>` (never plain text) |
 
-Full ASP.NET Core Identity is **not** required at this stage.
+### Authentication
 
-### Where authorization will be applied
+Full ASP.NET Core Identity is intentionally **not** used (outside the required scope of the technical test).
 
-- Prefer controller/action `[Authorize]` on Employee, Task, and Dashboard once authentication exists.
-- Keep anonymous access only for error/public pages if needed.
-- Do not push authorization checks into repositories.
+Database-backed cookie authentication is used:
+
+```text
+Controller
+    ↓
+AuthenticationService
+    ↓
+UserRepository
+    ↓
+EF Core
+    ↓
+ApplicationUsers
+
+AuthenticationService
+    ↓
+ClaimsPrincipal
+    ↓
+Cookie Authentication
+    ↓
+[Authorize]
+```
+
+**Technical-test / demo admin account** (seeded by `Database-Create.bat` → `SeedData.sql` with a password hash only):
+
+| Setting | Value |
+|---|---|
+| Email | `admin@gmail.com` |
+| Password | `Admin@123` |
+| Role | `Admin` |
+
+Do **not** use this pattern for production credentials.
+
+Claims issued on login:
+
+- `ClaimTypes.NameIdentifier` → user Id
+- `ClaimTypes.Name` → email
+- `ClaimTypes.Email` → email
+- `ClaimTypes.Role` → role (e.g. `Admin`)
+
+`PasswordHash` is never returned to views, never added to claims, and never logged.
+
+Protected with `[Authorize]`:
+
+- Task: Create, Edit, Delete, Mark Completed
+- Employee: Create, Edit
+
+Default unauthenticated entry: `/Account/Login`
+
+JWT is **not** used (MVC/Razor app).
+
+Schema + demo admin seed are created by `Database-Create.bat` / `Database.sql` / `SeedData.sql`.
+The seed stores only an ASP.NET Core `PasswordHasher` hash for `Admin@123` — never the plain password.
 
 ### Rate limiting (optional, cross-cutting)
 
@@ -371,7 +421,7 @@ BstSolutions/
 
 ## 16. Future optional enhancements
 
-1. Add ASP.NET Core Identity and enable `[Authorize]` on Employee/Task/Dashboard.
+1. Replace demo cookie auth with ASP.NET Core Identity or company SSO.
 2. Optionally enable ASP.NET Core rate limiting middleware.
 3. Add unit tests for service business rules.
 

@@ -1,12 +1,13 @@
 using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Task;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace BstSolutions.Controllers;
 
-// [Authorize] — task create/edit/delete should require authenticated users (Task 13).
+[Authorize]
 public class TaskController : Controller
 {
     private readonly ITaskService _taskService;
@@ -27,6 +28,7 @@ public class TaskController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Create(CancellationToken cancellationToken)
     {
         await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
@@ -38,6 +40,7 @@ public class TaskController : Controller
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateTaskViewModel model, CancellationToken cancellationToken)
     {
@@ -62,6 +65,7 @@ public class TaskController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var model = await _taskService.GetByIdAsync(id, cancellationToken);
@@ -75,6 +79,7 @@ public class TaskController : Controller
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditTaskViewModel model, CancellationToken cancellationToken)
     {
@@ -111,6 +116,7 @@ public class TaskController : Controller
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
@@ -128,6 +134,7 @@ public class TaskController : Controller
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id, CancellationToken cancellationToken)
     {

@@ -1,11 +1,12 @@
 using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Employee;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BstSolutions.Controllers;
 
-// [Authorize] — enable when authentication is added (Task 13).
+[Authorize]
 public class EmployeeController : Controller
 {
     private readonly IEmployeeService _employeeService;
@@ -23,12 +24,14 @@ public class EmployeeController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public IActionResult Create()
     {
         return View(new CreateEmployeeViewModel());
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(CreateEmployeeViewModel model, CancellationToken cancellationToken)
     {
@@ -51,6 +54,7 @@ public class EmployeeController : Controller
     }
 
     [HttpGet]
+    [Authorize]
     public async Task<IActionResult> Edit(int id, CancellationToken cancellationToken)
     {
         var employee = await _employeeService.GetByIdAsync(id, cancellationToken);
@@ -63,6 +67,7 @@ public class EmployeeController : Controller
     }
 
     [HttpPost]
+    [Authorize]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Edit(EditEmployeeViewModel model, CancellationToken cancellationToken)
     {
