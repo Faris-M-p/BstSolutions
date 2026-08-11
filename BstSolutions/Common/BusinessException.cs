@@ -1,8 +1,9 @@
 namespace BstSolutions.Common;
 
 /// <summary>
-/// Expected business-rule failure. Prefer returning ServiceResult from services.
-/// If thrown, middleware maps it to a safe 400 response (not 500).
+/// Expected business-rule failure.
+/// Controllers map UserMessage to ModelState/ApiResponse.
+/// Middleware maps unexpected exceptions only (not this type when caught in controllers).
 /// </summary>
 public class BusinessException : Exception
 {

@@ -1,3 +1,4 @@
+using BstSolutions.Common;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Employee;
 using Microsoft.AspNetCore.Authorization;
@@ -37,15 +38,17 @@ public class EmployeeController : Controller
             return View(model);
         }
 
-        var result = await _employeeService.CreateAsync(model, cancellationToken);
-        if (!result.Success)
+        try
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage);
+            await _employeeService.CreateAsync(model, cancellationToken);
+            TempData["Success"] = "Employee created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.UserMessage);
             return View(model);
         }
-
-        TempData["Success"] = result.UserMessage;
-        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -69,14 +72,16 @@ public class EmployeeController : Controller
             return View(model);
         }
 
-        var result = await _employeeService.UpdateAsync(model, cancellationToken);
-        if (!result.Success)
+        try
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage);
+            await _employeeService.UpdateAsync(model, cancellationToken);
+            TempData["Success"] = "Employee updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.UserMessage);
             return View(model);
         }
-
-        TempData["Success"] = result.UserMessage;
-        return RedirectToAction(nameof(Index));
     }
 }

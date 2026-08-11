@@ -27,7 +27,7 @@ Layered, interview-friendly MVC architecture:
 
 | Layer | Responsibility |
 |---|---|
-| Middleware | Cross-cutting HTTP concerns (global exception handling) |
+| Middleware | Cross-cutting HTTP concerns (request logging, global exception handling) |
 | Controller | HTTP, model binding, ModelState, call services, return View/JSON/Redirect |
 | Service | Business operations, business validation/rules, coordinate repositories |
 | Repository | Database access only via EF Core + LINQ |
@@ -43,7 +43,11 @@ No Generic Repository, Unit of Work, MediatR, CQRS, AutoMapper, or Dapper.
 ```text
 HTTP Request
     ↓
-Middleware (GlobalExceptionMiddleware)
+RequestLoggingMiddleware
+    ↓
+GlobalExceptionMiddleware
+    ↓
+Routing / Authentication / Authorization
     ↓
 Controller
     ↓
@@ -362,29 +366,16 @@ If added later, use ASP.NET Core rate limiting middleware/configuration only.
 
 ## 14. Response and Error Handling
 
-### ServiceResult (Controller ↔ Service)
+### ApiResponse (AJAX)
 
-Expected business failures return `ServiceResult` / `ServiceResult<T>` (not HTTP types):
-
-| Field | Purpose |
-|---|---|
-| `Success` | Operation outcome |
-| `UserMessage` | Safe message for UI |
-| `DeveloperMessage` | Technical context (logs only) |
-| `ErrorCode` | Stable code e.g. `EMPLOYEE_EMAIL_EXISTS` |
-| `Data` | Optional payload |
-
-### ApiResponse (AJAX only)
-
-AJAX endpoints map `ServiceResult` → `ApiResponse` without sending `DeveloperMessage`.
+AJAX endpoints return `ApiResponse` without exposing technical details.
 
 **Success (200)**
 ```json
 {
   "success": true,
   "userMessage": "Task completed successfully.",
-  "errorCode": null,
-  "data": null
+  "errorCode": null
 }
 ```
 
@@ -393,17 +384,7 @@ AJAX endpoints map `ServiceResult` → `ApiResponse` without sending `DeveloperM
 {
   "success": false,
   "userMessage": "An employee with this email already exists.",
-  "errorCode": "EMPLOYEE_EMAIL_EXISTS",
-  "data": null
-}
-```
-
-**Concurrency (409)**
-```json
-{
-  "success": false,
-  "userMessage": "This task was modified by another user. Please refresh and try again.",
-  "errorCode": "CONCURRENCY_CONFLICT"
+  "errorCode": "EMPLOYEE_EMAIL_EXISTS"
 }
 ```
 
@@ -420,28 +401,65 @@ AJAX endpoints map `ServiceResult` → `ApiResponse` without sending `DeveloperM
 
 - Frontend shows **UserMessage only** (`result.userMessage`).
 - Never show `DeveloperMessage`, stack traces, SQL, or connection strings.
-- Unexpected exceptions are logged with full exception details + DeveloperMessage.
-- MVC Razor actions use `ModelState` / `TempData` + Views (not forced JSON).
-- Controllers do not wrap unexpected exceptions in try/catch.
+- Expected business failures use `BusinessException` (UserMessage + DeveloperMessage + ErrorCode).
+- Unexpected exceptions are logged by `GlobalExceptionMiddleware`.
+- MVC Razor actions use `ModelState` / `TempData` + Views.
 
 ### Flow
 
 ```text
 Expected business failure
-    → ServiceResult
+    → BusinessException
     → Controller (ModelState / ApiResponse)
     → Frontend UserMessage
 
 Unexpected exception
     → GlobalExceptionMiddleware
-    → ILogger (DeveloperMessage + exception)
+    → ILogger (technical details)
     → Safe ApiResponse / Error page
     → Frontend UserMessage only
 ```
 
 ---
 
-## 15. Error handling approach
+## 15. Request Logging Middleware
+
+Every HTTP request passes through `Middleware/RequestLoggingMiddleware`.
+
+It records:
+
+- HTTP method
+- Request path
+- Authenticated user (or `Anonymous`)
+- Response status code
+- Duration in milliseconds
+- `TraceIdentifier` (ASP.NET Core request id)
+
+Sensitive information is intentionally **not** logged (passwords, tokens, cookies, Authorization headers, request/response bodies, connection strings).
+
+Uses `ILogger<RequestLoggingMiddleware>` so the existing ASP.NET Core / Serilog logging configuration receives the logs. Request logging is separate from `GlobalExceptionMiddleware` (which handles unexpected exceptions as `Error`).
+
+Example:
+
+```text
+HTTP POST /Task/Complete responded 200 in 145 ms for user admin@gmail.com, TraceId: 0HMK...
+```
+
+Unauthenticated example:
+
+```text
+HTTP GET /Account/Login responded 200 in 35 ms for user Anonymous, TraceId: 0HMK...
+```
+
+Pipeline order:
+
+```text
+RequestLoggingMiddleware → GlobalExceptionMiddleware → app pipeline
+```
+
+---
+
+## 16. Error handling approach
 
 `Middleware/GlobalExceptionMiddleware`:
 
@@ -451,16 +469,18 @@ Unexpected exception
 - Returns JSON-friendly safe payload for AJAX/JSON requests
 - Redirects MVC requests to `/Home/Error`
 
-Business-specific exceptions will be handled in services/controllers later; middleware stays generic.
+Business-specific exceptions are handled in services/controllers; middleware stays generic for unexpected failures.
 
 ---
 
-## 15. Solution structure
+## 17. Solution structure
 
 ```text
 BstSolutions/
 ├── Controllers/
 ├── Middleware/
+│   ├── RequestLoggingMiddleware.cs
+│   └── GlobalExceptionMiddleware.cs
 ├── Data/
 ├── Models/
 ├── ViewModels/
@@ -500,7 +520,7 @@ BstSolutions/
 
 ---
 
-## 16. Future optional enhancements
+## 18. Future optional enhancements
 
 1. Replace demo cookie auth with ASP.NET Core Identity or company SSO.
 2. Optionally enable ASP.NET Core rate limiting middleware.
@@ -508,7 +528,7 @@ BstSolutions/
 
 ---
 
-## 17. Local run (after database is created)
+## 19. Local run (after database is created)
 
 ```bash
 cd BstSolutions

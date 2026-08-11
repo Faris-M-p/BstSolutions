@@ -1,3 +1,4 @@
+using BstSolutions.Common;
 using BstSolutions.Common.Responses;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Task;
@@ -48,16 +49,18 @@ public class TaskController : Controller
             return View(model);
         }
 
-        var result = await _taskService.CreateAsync(model, cancellationToken);
-        if (!result.Success)
+        try
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage);
+            await _taskService.CreateAsync(model, cancellationToken);
+            TempData["Success"] = "Task created successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.UserMessage);
             await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
             return View(model);
         }
-
-        TempData["Success"] = result.UserMessage;
-        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -83,16 +86,18 @@ public class TaskController : Controller
             return View(model);
         }
 
-        var result = await _taskService.UpdateAsync(model, cancellationToken);
-        if (!result.Success)
+        try
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage);
+            await _taskService.UpdateAsync(model, cancellationToken);
+            TempData["Success"] = "Task updated successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+        catch (BusinessException ex)
+        {
+            ModelState.AddModelError(string.Empty, ex.UserMessage);
             await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
             return View(model);
         }
-
-        TempData["Success"] = result.UserMessage;
-        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet]
@@ -111,14 +116,14 @@ public class TaskController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var result = await _taskService.DeleteAsync(id, cancellationToken);
-        if (!result.Success)
+        try
         {
-            TempData["Error"] = result.UserMessage;
+            await _taskService.DeleteAsync(id, cancellationToken);
+            TempData["Success"] = "Task deleted successfully.";
         }
-        else
+        catch (BusinessException ex)
         {
-            TempData["Success"] = result.UserMessage;
+            TempData["Error"] = ex.UserMessage;
         }
 
         return RedirectToAction(nameof(Index));
@@ -128,20 +133,22 @@ public class TaskController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Complete(int id, CancellationToken cancellationToken)
     {
-        var result = await _taskService.CompleteAsync(id, cancellationToken);
-        if (!result.Success)
+        try
         {
-            var statusCode = result.ErrorCode switch
+            await _taskService.CompleteAsync(id, cancellationToken);
+            return Ok(ApiResponse.Ok("Task completed successfully."));
+        }
+        catch (BusinessException ex)
+        {
+            var statusCode = ex.ErrorCode switch
             {
                 "TASK_NOT_FOUND" => StatusCodes.Status404NotFound,
                 "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
                 _ => StatusCodes.Status400BadRequest
             };
 
-            return StatusCode(statusCode, ApiResponse.Fail(result.UserMessage, result.ErrorCode));
+            return StatusCode(statusCode, ApiResponse.Fail(ex.UserMessage, ex.ErrorCode));
         }
-
-        return Ok(ApiResponse.Ok(result.UserMessage));
     }
 
     private async Task PopulateEmployeeOptionsAsync(bool activeOnly, CancellationToken cancellationToken)

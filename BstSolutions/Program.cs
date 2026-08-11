@@ -43,6 +43,7 @@ builder.Services.AddScoped<BstSolutions.Services.Interfaces.IAuthenticationServi
 
 var app = builder.Build();
 
+app.UseMiddleware<RequestLoggingMiddleware>();
 app.UseMiddleware<GlobalExceptionMiddleware>();
 
 if (!app.Environment.IsDevelopment())

@@ -42,15 +42,14 @@ public class AccountController : Controller
             return View(model);
         }
 
-        var result = await _authenticationService.AuthenticateAsync(model.Email, model.Password, cancellationToken);
-        if (!result.Success || result.Data is null)
+        var user = await _authenticationService.AuthenticateAsync(model.Email, model.Password, cancellationToken);
+        if (user is null)
         {
-            ModelState.AddModelError(string.Empty, result.UserMessage);
+            ModelState.AddModelError(string.Empty, "Invalid username or password.");
             model.Password = string.Empty;
             return View(model);
         }
 
-        var user = result.Data;
         var claims = new List<Claim>
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
