@@ -1,2 +1,6 @@
+-- Active database patches for index changes go here.
+-- Completed patches should be removed/commented after deployment
+-- according to the project's database patch management guideline.
+--
 -- Uncomment only the required changes.
--- :r .\WorkTasks.sql
+-- :r .\Indexes.sql

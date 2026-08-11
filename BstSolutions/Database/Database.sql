@@ -1,14 +1,12 @@
 /*
     Database.sql
     ------------------------------------------------------------
-    Creates a NEW database using the latest master definitions.
-    Does NOT depend on historical patches.
+    Master entry point for creating a NEW database.
+    Executes the latest master SQL files only.
+    Does NOT include Patch.sql files.
+    Does NOT depend on Database-Patch.sql.
 
-    Run with sqlcmd from the Database folder:
-
-      sqlcmd -S .\SQLEXPRESS -E -i Database.sql
-
-    Or from SSMS with SQLCMD Mode enabled.
+    Preferred: double-click Database-Create.bat
 */
 
 :setvar DatabaseName "TaskManagementSystem"
@@ -30,11 +28,11 @@ GO
 
 PRINT 'Applying latest master index definitions...';
 GO
-:r .\02_Indexes\WorkTasks.sql
+:r .\02_Indexes\Indexes.sql
 
 PRINT 'Applying latest master seed data...';
 GO
-:r .\03_SeedData\Seed.sql
+:r .\03_SeedData\SeedData.sql
 
 PRINT 'Database.sql completed successfully.';
 GO

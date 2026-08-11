@@ -82,97 +82,100 @@ Fetch API will be used later for AJAX complete-task calls.
 
 ---
 
-## 5. Database deployment approach
+## 5. Database Deployment
 
-**EF Core Migrations are not used.**
+**EF Core Migrations are intentionally not used.**
 
 Schema is owned by SQL scripts under `BstSolutions/Database/`.
 
-### Master SQL vs Patch SQL
+### NEW DATABASE
+
+1. Double-click `Database/Database-Create.bat`
+2. It runs `sqlcmd` → `Database.sql`
+3. `Database.sql` creates `TaskManagementSystem` (if needed) and executes the latest **master** SQL files:
+   - `01_Tables/Employees.sql`
+   - `01_Tables/WorkTasks.sql`
+   - `02_Indexes/Indexes.sql`
+   - `03_SeedData/SeedData.sql`
+
+### EXISTING DATABASE
+
+1. Double-click `Database/Database-Patch.bat`
+2. It runs `sqlcmd` → `Database-Patch.sql` against the existing database
+3. Only active folder `Patch.sql` files are executed
+4. It never recreates the database and never runs `Database.sql`
+
+### Master vs Patch
 
 | Type | Purpose |
 |---|---|
-| **Master SQL** | Latest **complete** definition. Used to create a **new** database. |
-| **Patch SQL** | **Only changes** needed to upgrade an **existing/old** database. |
+| **Master SQL** | Latest **complete** definition. Used for a **new** database. |
+| **Patch SQL** | **Only changes** needed to upgrade an **existing** database. |
 
-Concept:
+Lifecycle:
 
 ```text
-New Database:
-    Database.sql
-        ↓
-    Latest master definitions (01_Tables, 02_Indexes, 03_SeedData)
-        ↓
-    Latest database
-
-Existing Database:
-    Database-Patch.sql
-        ↓
-    Active patch files
-        ↓
-    Latest database
+Update master SQL
+    ↓
+Add/uncomment upgrade entry in Patch.sql
+    ↓
+Double-click Database-Patch.bat
+    ↓
+After deploy: remove/comment completed patch
+    ↓
+Master remains the latest definition
 ```
 
-Rules:
+### Requirements
 
-1. Master files always contain the latest complete definition.
-2. `Database.sql` creates a completely new database from masters.
-3. Folder `Patch.sql` files only list which scripts to run (commented `:r` includes).
-4. `Database-Patch.sql` executes those patch entry points.
-5. Masters are never historical migration files.
-6. No timestamp-based migration files.
-7. No EF Core migration commands.
+- **sqlcmd** must be installed and available in PATH (`sqlcmd -?`)
+- Windows Integrated Authentication is used by default
+- Default instance in the `.bat` files: `.\SQLEXPRESS` (matches `appsettings.json`)
+- Edit `SERVER` / `DATABASE` at the top of the `.bat` files if needed
+
+### Entry points
+
+- `Database.sql` — master creation entry point (no Patch.sql includes)
+- `Database-Patch.sql` — patch entry point (no master SQL includes)
 
 ---
 
 ## 6. How to create a new database
 
-From `BstSolutions/Database/` using **sqlcmd** (or SSMS with SQLCMD Mode):
+Preferred:
+
+1. Open `BstSolutions/Database/`
+2. Double-click `Database-Create.bat`
+
+Manual equivalent:
 
 ```bash
-sqlcmd -S .\SQLEXPRESS -E -i Database.sql
+sqlcmd -S .\SQLEXPRESS -E -b -i Database.sql
 ```
-
-This creates database `TaskManagementSystem` (override with sqlcmd variable if needed) and applies:
-
-- `01_Tables/Employees.sql`
-- `01_Tables/WorkTasks.sql`
-- `02_Indexes/WorkTasks.sql`
-- `03_SeedData/Seed.sql`
-
-Update `appsettings.json` / `appsettings.Development.json` connection string if your SQL Server instance differs.
 
 ---
 
 ## 7. How to patch an existing database
 
+Preferred:
+
+1. Update the related master SQL file(s)
+2. Uncomment the matching `:r` line(s) in the folder `Patch.sql`
+3. Double-click `Database-Patch.bat`
+
+Manual equivalent:
+
 ```bash
-sqlcmd -S .\SQLEXPRESS -E -d TaskManagementSystem -i Database-Patch.sql
+sqlcmd -S .\SQLEXPRESS -E -d TaskManagementSystem -b -i Database-Patch.sql
 ```
 
-`Database-Patch.sql` only orchestrates folder patch entry points:
-
-```text
-=== Patch 01_Tables ===
-=== Patch 02_Indexes ===
-=== Patch 03_SeedData ===
-```
-
-Each folder `Patch.sql` lists which master files to run — **commented by default**. Uncomment only what you need:
+Example `01_Tables/Patch.sql`:
 
 ```sql
 -- Uncomment only the required changes.
 -- :r .\Employees.sql
 -- :r .\WorkTasks.sql
 ```
-
-When schema changes:
-
-1. Update the related **master** file(s) (latest complete definition).
-2. Uncomment the matching `:r` line(s) inside the folder `Patch.sql`.
-3. Run `Database-Patch.sql`.
-
-Patch files contain **no change logic** — only which scripts to include.
 
 ---
 
@@ -354,6 +357,8 @@ BstSolutions/
 ├── Database/
 │   ├── Database.sql
 │   ├── Database-Patch.sql
+│   ├── Database-Create.bat
+│   ├── Database-Patch.bat
 │   ├── 01_Tables/
 │   ├── 02_Indexes/
 │   └── 03_SeedData/

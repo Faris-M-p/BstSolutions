@@ -1,2 +1,6 @@
+-- Active database patches for seed-data changes go here.
+-- Completed patches should be removed/commented after deployment
+-- according to the project's database patch management guideline.
+--
 -- Uncomment only the required changes.
--- :r .\Seed.sql
+-- :r .\SeedData.sql

@@ -1,7 +1,19 @@
--- TaskManagementSystem patch script
--- Uncomment entries inside each Patch.sql before running.
--- Run with: sqlcmd -S .\SQLEXPRESS -E -d TaskManagementSystem -i Database-Patch.sql
--- Or use SSMS with SQLCMD Mode enabled.
+/*
+    Database-Patch.sql
+    ------------------------------------------------------------
+    Master entry point for updating an EXISTING database.
+    Executes only active Patch.sql files.
+    Does NOT recreate the database.
+    Does NOT execute master SQL files.
+
+    Preferred: double-click Database-Patch.bat
+
+    Patch lifecycle:
+    1. Update master SQL file(s)
+    2. Add upgrade SQL / uncomment :r in the folder Patch.sql
+    3. Run Database-Patch.bat
+    4. After deploy, remove/comment completed patch entries
+*/
 
 PRINT '=== Patch 01_Tables ===';
 GO
