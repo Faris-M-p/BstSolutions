@@ -72,7 +72,7 @@ public class EmployeeService : IEmployeeService
     public async Task UpdateAsync(EditEmployeeViewModel model, CancellationToken cancellationToken = default)
     {
         var employee = await _employeeRepository.GetByIdAsync(model.Id, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Employee not found.",
                 "EMPLOYEE_NOT_FOUND");
 

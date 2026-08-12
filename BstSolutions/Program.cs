@@ -41,10 +41,12 @@ builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<BstSolutions.Services.Interfaces.IAuthenticationService, AuthenticationService>();
 
+builder.Services.AddExceptionHandler<AppExceptionHandler>();
+
 var app = builder.Build();
 
 app.UseMiddleware<RequestLoggingMiddleware>();
-app.UseMiddleware<GlobalExceptionMiddleware>();
+app.UseExceptionHandler();
 
 if (!app.Environment.IsDevelopment())
 {

@@ -123,7 +123,7 @@ public class TaskService : ITaskService
     public async Task CreateAsync(CreateTaskViewModel model, CancellationToken cancellationToken = default)
     {
         var employee = await _employeeRepository.GetByIdAsync(model.EmployeeId, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Assigned employee was not found.",
                 "TASK_EMPLOYEE_NOT_FOUND");
 
@@ -153,12 +153,12 @@ public class TaskService : ITaskService
     public async Task UpdateAsync(EditTaskViewModel model, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(model.Id, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Task not found.",
                 "TASK_NOT_FOUND");
 
         var employee = await _employeeRepository.GetByIdAsync(model.EmployeeId, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Assigned employee was not found.",
                 "TASK_EMPLOYEE_NOT_FOUND");
 
@@ -184,7 +184,7 @@ public class TaskService : ITaskService
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new BusinessException(
+            throw new ConflictException(
                 "This task was modified by another user. Please refresh and try again.",
                 "CONCURRENCY_CONFLICT");
         }
@@ -193,7 +193,7 @@ public class TaskService : ITaskService
     public async Task CompleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Task not found.",
                 "TASK_NOT_FOUND");
 
@@ -218,7 +218,7 @@ public class TaskService : ITaskService
     public async Task DeleteAsync(int id, CancellationToken cancellationToken = default)
     {
         var task = await _taskRepository.GetByIdAsync(id, cancellationToken)
-            ?? throw new BusinessException(
+            ?? throw new NotFoundException(
                 "Task not found.",
                 "TASK_NOT_FOUND");
 

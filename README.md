@@ -19,7 +19,7 @@ ASP.NET Core MVC application for managing employees and work tasks.
 
 | Layer | Responsibility |
 |---|---|
-| Middleware | Request logging, global exception handling |
+| Middleware | Request logging, `IExceptionHandler` (`AppExceptionHandler`) |
 | Controller | HTTP, model binding, ModelState, call services, return View/JSON/Redirect |
 | Service | Business rules, coordinate repositories |
 | Repository | Database access via EF Core + LINQ |
@@ -37,7 +37,7 @@ HTTP Request
     ↓
 RequestLoggingMiddleware
     ↓
-GlobalExceptionMiddleware
+AppExceptionHandler (IExceptionHandler)
     ↓
 Routing / Authentication / Authorization
     ↓
@@ -226,6 +226,31 @@ JWT and full ASP.NET Core Identity are not used.
 
 ## 11. Response and error handling
 
+### Exception types (`Common/Exceptions/`)
+
+| Exception | When | HTTP |
+|---|---|---|
+| `BusinessException` | Business rule failed | 400 |
+| `NotFoundException` | No data / record missing | 404 |
+| `ConflictException` | Concurrency conflict | 409 |
+
+All three inherit from `Exception` (same pattern).
+
+### How it works
+
+```text
+NotFoundException / ConflictException / BusinessException
+    → AppExceptionHandler (if not caught in controller)
+    → status + UserMessage
+
+Controller may still catch BusinessException for MVC forms
+    → ModelState / ApiResponse
+
+Unexpected Exception
+    → AppExceptionHandler
+    → 500 + safe message only
+```
+
 ### ApiResponse (AJAX)
 
 **Success**
@@ -241,13 +266,6 @@ JWT and full ASP.NET Core Identity are not used.
 **Unexpected (500)**
 ```json
 { "success": false, "userMessage": "Something went wrong. Please try again later." }
-```
-
-### Flow
-
-```text
-BusinessException → Controller (ModelState / ApiResponse) → UserMessage
-Unhandled exception → GlobalExceptionMiddleware → safe JSON or /Account/Error
 ```
 
 Frontend shows **UserMessage only**. Stack traces are never returned to the client.
@@ -266,18 +284,19 @@ Example:
 HTTP POST /Task/Complete responded 200 in 145 ms for user admin@gmail.com, TraceId: 0HMK...
 ```
 
-Order: `RequestLoggingMiddleware` → `GlobalExceptionMiddleware` → app pipeline
+Order: `RequestLoggingMiddleware` → `UseExceptionHandler` / `AppExceptionHandler` → app pipeline
 
 ---
 
-## 13. Global exception middleware
+## 13. Global exception handler
 
-1. `try` / `await _next` / `catch`
-2. Log exception with `ILogger`
-3. AJAX → safe JSON
-4. MVC → redirect `/Account/Error`
+Uses ASP.NET Core `IExceptionHandler` (`Middleware/AppExceptionHandler.cs`):
 
-`BusinessException` is handled in controllers; middleware covers unexpected failures only.
+1. `NotFoundException` → 404
+2. `ConflictException` → 409
+3. `BusinessException` → 400
+4. Unexpected → 500 + safe message
+5. AJAX → JSON `ApiResponse`; MVC → `/Account/Error`
 
 ---
 
@@ -288,7 +307,7 @@ BstSolutions/
 ├── Controllers/
 ├── Middleware/
 │   ├── RequestLoggingMiddleware.cs
-│   └── GlobalExceptionMiddleware.cs
+│   └── AppExceptionHandler.cs
 ├── Data/
 ├── Models/
 ├── ViewModels/
@@ -296,6 +315,7 @@ BstSolutions/
 ├── Services/
 ├── Common/
 │   ├── Enums/
+│   ├── Exceptions/
 │   ├── Responses/
 │   └── Validation/
 ├── Views/

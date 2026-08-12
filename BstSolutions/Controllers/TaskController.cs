@@ -150,14 +150,7 @@ public class TaskController : Controller
         }
         catch (BusinessException ex)
         {
-            var statusCode = ex.ErrorCode switch
-            {
-                "TASK_NOT_FOUND" => StatusCodes.Status404NotFound,
-                "CONCURRENCY_CONFLICT" => StatusCodes.Status409Conflict,
-                _ => StatusCodes.Status400BadRequest
-            };
-
-            return StatusCode(statusCode, ApiResponse.Fail(ex.UserMessage, ex.ErrorCode));
+            return BadRequest(ApiResponse.Fail(ex.UserMessage, ex.ErrorCode));
         }
     }
 
