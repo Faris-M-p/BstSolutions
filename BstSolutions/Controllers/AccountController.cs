@@ -83,9 +83,8 @@ public class AccountController : Controller
         }
         catch (UnauthorizedException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.UserMessage);
-            model.Password = string.Empty;
-            return View(model);
+            TempData["LoginError"] = ex.UserMessage;
+            return RedirectToAction(nameof(Login), new { returnUrl });
         }
     }
 
