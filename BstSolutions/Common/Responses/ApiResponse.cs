@@ -6,8 +6,6 @@ public class ApiResponse
 
     public string UserMessage { get; set; } = string.Empty;
 
-    public string? DeveloperMessage { get; set; }
-
     public string? ErrorCode { get; set; }
 
     public static ApiResponse Ok(string userMessage) => new()

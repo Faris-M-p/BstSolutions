@@ -166,18 +166,39 @@ entity.Property(t => t.RowVersion).IsRowVersion();
 
 ### UI / ViewModel (DataAnnotations)
 
-- Employee: FirstName, LastName, Email required; valid email
-- Task: Title required (max 150); Description max 2000
+Validation lives on ViewModels. Controllers only check `ModelState.IsValid`.
+
+Built-in attributes used:
+
+- `[Required]`, `[StringLength]`, `[EmailAddress]`, `[Display]`, `[DataType]`, `[EnumDataType]`
+
+Custom attributes in `Common/Validation/`:
+
+| Attribute | Purpose |
+|---|---|
+| `NoScriptTags` | Blocks script / javascript content in text fields |
+| `GreaterThanZero` | Ensures IDs / selections are > 0 |
+| `DateNotInPast` | Due date cannot be before today (create task) |
+
+Example:
+
+```csharp
+[Required(ErrorMessage = "{0} is required.")]
+[StringLength(200, ErrorMessage = "{0} cannot exceed {1} characters.")]
+[Display(Name = "Search text")]
+[NoScriptTags]
+public string? Search { get; set; }
+```
 
 ### Business rules (Service layer)
 
+Rules that need the database stay in services:
+
 - Duplicate employee email
-- Employee must be active when assigning a new task
-- Task must have an employee
-- DueDate cannot be before today
+- Employee must exist / be active when assigning a task
 - Completed task cannot be deleted
 - CompletedDate set/cleared with status changes
-
+- Optimistic concurrency conflict
 ---
 
 ## 10. Security
@@ -226,7 +247,7 @@ JWT and full ASP.NET Core Identity are not used.
 
 ```text
 BusinessException → Controller (ModelState / ApiResponse) → UserMessage
-Unhandled exception → GlobalExceptionMiddleware → safe JSON or /Home/Error
+Unhandled exception → GlobalExceptionMiddleware → safe JSON or /Account/Error
 ```
 
 Frontend shows **UserMessage only**. Stack traces are never returned to the client.
@@ -254,7 +275,7 @@ Order: `RequestLoggingMiddleware` → `GlobalExceptionMiddleware` → app pipeli
 1. `try` / `await _next` / `catch`
 2. Log exception with `ILogger`
 3. AJAX → safe JSON
-4. MVC → redirect `/Home/Error`
+4. MVC → redirect `/Account/Error`
 
 `BusinessException` is handled in controllers; middleware covers unexpected failures only.
 
@@ -274,6 +295,9 @@ BstSolutions/
 ├── Repositories/
 ├── Services/
 ├── Common/
+│   ├── Enums/
+│   ├── Responses/
+│   └── Validation/
 ├── Views/
 ├── wwwroot/
 ├── Database/

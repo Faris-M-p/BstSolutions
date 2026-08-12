@@ -51,7 +51,7 @@ public class GlobalExceptionMiddleware
                 return;
             }
 
-            context.Response.Redirect("/Home/Error");
+            context.Response.Redirect("/Account/Error");
         }
     }
 }

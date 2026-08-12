@@ -53,7 +53,6 @@ public class EmployeeService : IEmployeeService
         {
             throw new BusinessException(
                 "An employee with this email already exists.",
-                "Duplicate employee email detected.",
                 "EMPLOYEE_EMAIL_EXISTS");
         }
 
@@ -75,7 +74,6 @@ public class EmployeeService : IEmployeeService
         var employee = await _employeeRepository.GetByIdAsync(model.Id, cancellationToken)
             ?? throw new BusinessException(
                 "Employee not found.",
-                $"Employee Id {model.Id} was not found for update.",
                 "EMPLOYEE_NOT_FOUND");
 
         var email = model.Email.Trim();
@@ -84,7 +82,6 @@ public class EmployeeService : IEmployeeService
         {
             throw new BusinessException(
                 "An employee with this email already exists.",
-                "Duplicate employee email detected during update.",
                 "EMPLOYEE_EMAIL_EXISTS");
         }
 

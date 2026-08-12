@@ -23,8 +23,18 @@ public class TaskController : Controller
     [HttpGet]
     public async Task<IActionResult> Index(TaskFilterViewModel filter, CancellationToken cancellationToken)
     {
-        var model = await _taskService.GetTasksAsync(filter, cancellationToken);
         await PopulateFilterLookupsAsync(filter.EmployeeId, cancellationToken);
+
+        if (!ModelState.IsValid)
+        {
+            return View(new TaskListViewModel
+            {
+                Filter = filter,
+                Tasks = Array.Empty<TaskListItemViewModel>()
+            });
+        }
+
+        var model = await _taskService.GetTasksAsync(filter, cancellationToken);
         return View(model);
     }
 

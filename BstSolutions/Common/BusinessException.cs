@@ -4,15 +4,12 @@ public class BusinessException : Exception
 {
     public string UserMessage { get; }
 
-    public string DeveloperMessage { get; }
-
     public string ErrorCode { get; }
 
-    public BusinessException(string userMessage, string developerMessage, string errorCode)
+    public BusinessException(string userMessage, string errorCode)
         : base(userMessage)
     {
         UserMessage = userMessage;
-        DeveloperMessage = developerMessage;
         ErrorCode = errorCode;
     }
 }

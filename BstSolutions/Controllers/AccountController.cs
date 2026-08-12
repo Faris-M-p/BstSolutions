@@ -92,4 +92,11 @@ public class AccountController : Controller
     {
         return View();
     }
+
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult Error()
+    {
+        return View();
+    }
 }

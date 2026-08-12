@@ -11,6 +11,9 @@
 </div>
 
 <form method="get" class="row g-2 mb-3">
+    <div class="col-12">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    </div>
     <div class="col-md-2">
         <label class="form-label">Employee</label>
         <select name="EmployeeId" class="form-select" asp-items="ViewBag.Employees">
