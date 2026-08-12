@@ -4,5 +4,5 @@ namespace BstSolutions.Services.Interfaces;
 
 public interface IAuthenticationService
 {
-    Task<AuthenticatedUserInfo?> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default);
+    Task<AuthenticatedUserInfo> AuthenticateAsync(string email, string password, CancellationToken cancellationToken = default);
 }

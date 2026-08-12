@@ -5,7 +5,7 @@ namespace BstSolutions.ViewModels.Employee;
 
 public class EditEmployeeViewModel
 {
-    [GreaterThanZero]
+    [GreaterThanZero(ErrorMessage = "{0} must be greater than zero.")]
     [Display(Name = "Employee")]
     public int Id { get; set; }
 
@@ -22,7 +22,7 @@ public class EditEmployeeViewModel
     public string LastName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "{0} is required.")]
-    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [EmailAddress(ErrorMessage = "{0} must be a valid email address.")]
     [StringLength(256, ErrorMessage = "{0} cannot exceed {1} characters.")]
     [Display(Name = "Email")]
     [NoScriptTags]

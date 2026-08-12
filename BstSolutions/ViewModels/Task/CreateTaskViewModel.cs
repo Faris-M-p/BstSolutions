@@ -18,7 +18,7 @@ public class CreateTaskViewModel
     public string? Description { get; set; }
 
     [Required(ErrorMessage = "{0} is required.")]
-    [GreaterThanZero(ErrorMessage = "Please select an employee.")]
+    [GreaterThanZero(ErrorMessage = "{0} must be greater than zero.")]
     [Display(Name = "Employee")]
     public int EmployeeId { get; set; }
 
@@ -30,6 +30,6 @@ public class CreateTaskViewModel
     [Required(ErrorMessage = "{0} is required.")]
     [DataType(DataType.Date)]
     [Display(Name = "Due Date")]
-    [DateNotInPast]
+    [DateNotInPast(ErrorMessage = "{0} cannot be earlier than today's date.")]
     public DateTime DueDate { get; set; }
 }

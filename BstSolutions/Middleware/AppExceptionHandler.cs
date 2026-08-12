@@ -25,7 +25,19 @@ public class AppExceptionHandler : IExceptionHandler
         string userMessage;
         string? errorCode;
 
-        if (exception is NotFoundException notFoundException)
+        if (exception is UnauthorizedException unauthorizedException)
+        {
+            statusCode = StatusCodes.Status401Unauthorized;
+            userMessage = unauthorizedException.UserMessage;
+            errorCode = unauthorizedException.ErrorCode;
+
+            _logger.LogWarning(
+                unauthorizedException,
+                "Unauthorized. ErrorCode: {ErrorCode}. Path: {Path}",
+                errorCode,
+                context.Request.Path);
+        }
+        else if (exception is NotFoundException notFoundException)
         {
             statusCode = StatusCodes.Status404NotFound;
             userMessage = notFoundException.UserMessage;

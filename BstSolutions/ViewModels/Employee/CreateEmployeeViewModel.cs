@@ -18,7 +18,7 @@ public class CreateEmployeeViewModel
     public string LastName { get; set; } = string.Empty;
 
     [Required(ErrorMessage = "{0} is required.")]
-    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [EmailAddress(ErrorMessage = "{0} must be a valid email address.")]
     [StringLength(256, ErrorMessage = "{0} cannot exceed {1} characters.")]
     [Display(Name = "Email")]
     [NoScriptTags]

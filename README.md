@@ -230,11 +230,12 @@ JWT and full ASP.NET Core Identity are not used.
 
 | Exception | When | HTTP |
 |---|---|---|
+| `UnauthorizedException` | Invalid login credentials | 401 |
 | `BusinessException` | Business rule failed | 400 |
 | `NotFoundException` | No data / record missing | 404 |
 | `ConflictException` | Concurrency conflict | 409 |
 
-All three inherit from `Exception` (same pattern).
+All inherit from `Exception` (same pattern).
 
 ### How it works
 
@@ -292,11 +293,14 @@ Order: `RequestLoggingMiddleware` → `UseExceptionHandler` / `AppExceptionHandl
 
 Uses ASP.NET Core `IExceptionHandler` (`Middleware/AppExceptionHandler.cs`):
 
-1. `NotFoundException` → 404
-2. `ConflictException` → 409
-3. `BusinessException` → 400
-4. Unexpected → 500 + safe message
-5. AJAX → JSON `ApiResponse`; MVC → `/Account/Error`
+1. `UnauthorizedException` → 401
+2. `NotFoundException` → 404
+3. `ConflictException` → 409
+4. `BusinessException` → 400
+5. Unexpected → 500 + safe message
+6. AJAX → JSON `ApiResponse`; MVC → `/Account/Error`
+
+Login invalid credentials: service throws `UnauthorizedException`; `AccountController` catches it and shows the message on the Login form.
 
 ---
 

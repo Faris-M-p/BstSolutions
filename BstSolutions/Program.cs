@@ -42,6 +42,7 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<BstSolutions.Services.Interfaces.IAuthenticationService, AuthenticationService>();
 
 builder.Services.AddExceptionHandler<AppExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 

@@ -18,15 +18,17 @@ public class TaskFilterViewModel
     public Priority? Priority { get; set; }
 
     [Display(Name = "Search text")]
-    [StringLength(200, ErrorMessage = "Search text cannot exceed 200 characters.")]
+    [StringLength(200, ErrorMessage = "{0} cannot exceed {1} characters.")]
     [NoScriptTags]
     public string? Search { get; set; }
 
-    [StringLength(50)]
+    [Display(Name = "Sort by")]
+    [StringLength(50, ErrorMessage = "{0} cannot exceed {1} characters.")]
     [NoScriptTags]
     public string? SortBy { get; set; }
 
-    [StringLength(10)]
+    [Display(Name = "Sort direction")]
+    [StringLength(10, ErrorMessage = "{0} cannot exceed {1} characters.")]
     [NoScriptTags]
     public string? SortDirection { get; set; }
 }

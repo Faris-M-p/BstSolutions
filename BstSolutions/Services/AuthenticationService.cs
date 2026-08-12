@@ -1,3 +1,4 @@
+using BstSolutions.Common;
 using BstSolutions.Models;
 using BstSolutions.Repositories.Interfaces;
 using BstSolutions.Services.Interfaces;
@@ -17,27 +18,34 @@ public class AuthenticationService : IAuthenticationService
         _passwordHasher = new PasswordHasher<ApplicationUser>();
     }
 
-    public async Task<AuthenticatedUserInfo?> AuthenticateAsync(
+    public async Task<AuthenticatedUserInfo> AuthenticateAsync(
         string email,
         string password,
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(email) || string.IsNullOrEmpty(password))
         {
-            return null;
+            throw new UnauthorizedException(
+                "Invalid email or password.",
+                "INVALID_CREDENTIALS");
         }
 
         var normalizedEmail = email.Trim();
         var user = await _userRepository.GetByEmailAsync(normalizedEmail, cancellationToken);
+
         if (user is null || !user.IsActive)
         {
-            return null;
+            throw new UnauthorizedException(
+                "Invalid email or password.",
+                "INVALID_CREDENTIALS");
         }
 
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, password);
         if (verification == PasswordVerificationResult.Failed)
         {
-            return null;
+            throw new UnauthorizedException(
+                "Invalid email or password.",
+                "INVALID_CREDENTIALS");
         }
 
         return new AuthenticatedUserInfo

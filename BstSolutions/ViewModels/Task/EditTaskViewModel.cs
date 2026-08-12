@@ -7,7 +7,7 @@ namespace BstSolutions.ViewModels.Task;
 
 public class EditTaskViewModel
 {
-    [GreaterThanZero]
+    [GreaterThanZero(ErrorMessage = "{0} must be greater than zero.")]
     [Display(Name = "Task")]
     public int Id { get; set; }
 
@@ -23,7 +23,7 @@ public class EditTaskViewModel
     public string? Description { get; set; }
 
     [Required(ErrorMessage = "{0} is required.")]
-    [GreaterThanZero(ErrorMessage = "Please select an employee.")]
+    [GreaterThanZero(ErrorMessage = "{0} must be greater than zero.")]
     [Display(Name = "Employee")]
     public int EmployeeId { get; set; }
 
@@ -43,6 +43,7 @@ public class EditTaskViewModel
     public DateTime DueDate { get; set; }
 
     [HiddenInput]
-    [Required]
+    [Required(ErrorMessage = "{0} is required.")]
+    [Display(Name = "Row Version")]
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
 }
