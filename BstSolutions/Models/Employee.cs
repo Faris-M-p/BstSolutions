@@ -2,7 +2,7 @@ namespace BstSolutions.Models;
 
 public class Employee
 {
-    public int Id { get; set; }
+    public int ID_Employee { get; set; }
 
     public string FirstName { get; set; } = string.Empty;
 

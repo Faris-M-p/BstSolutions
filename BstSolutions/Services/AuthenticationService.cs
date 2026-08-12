@@ -50,7 +50,7 @@ public class AuthenticationService : IAuthenticationService
 
         return new AuthenticatedUserInfo
         {
-            Id = user.Id,
+            Id = user.ID_ApplicationUser,
             Email = user.Email,
             Role = user.Role
         };

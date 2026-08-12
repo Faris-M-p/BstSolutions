@@ -23,13 +23,13 @@ public class TaskRepository : ITaskRepository
     {
         return _dbContext.WorkTasks
             .Include(t => t.Employee)
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(t => t.ID_WorkTask == id, cancellationToken);
     }
 
     public Task<bool> ExistsAsync(int id, CancellationToken cancellationToken = default)
     {
         return _dbContext.WorkTasks.AsNoTracking()
-            .AnyAsync(t => t.Id == id, cancellationToken);
+            .AnyAsync(t => t.ID_WorkTask == id, cancellationToken);
     }
 
     public async Task AddAsync(WorkTask workTask, CancellationToken cancellationToken = default)

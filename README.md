@@ -135,15 +135,16 @@ Named `WorkTaskStatus` to avoid clashing with `System.Threading.Tasks.TaskStatus
 
 ---
 
-## 7. SQL naming conventions
+## 7. SQL / C# naming conventions
 
 | Rule | Example |
 |---|---|
-| Primary key | `ID_Employee`, `ID_WorkTask` |
-| Foreign key column | `FK_Employee` |
+| Primary key | `ID_Employee`, `ID_WorkTask`, `ID_ApplicationUser` |
+| Foreign key | `FK_Employee` |
 | FK constraint | `FK_WorkTasks_Employee` |
 
-C# entity properties map via Fluent API (`Id` → `ID_Employee`, etc.).
+Entity / DB layer uses the SQL column names.  
+ViewModels / Views keep UI-friendly names (`Id`, `EmployeeId`) and map in the service layer.
 
 ---
 

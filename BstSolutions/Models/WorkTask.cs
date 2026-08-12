@@ -4,13 +4,13 @@ namespace BstSolutions.Models;
 
 public class WorkTask
 {
-    public int Id { get; set; }
+    public int ID_WorkTask { get; set; }
 
     public string Title { get; set; } = string.Empty;
 
     public string? Description { get; set; }
 
-    public int EmployeeId { get; set; }
+    public int FK_Employee { get; set; }
 
     public Priority Priority { get; set; }
 

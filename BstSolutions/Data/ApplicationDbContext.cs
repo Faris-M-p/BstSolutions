@@ -24,8 +24,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.ToTable("ApplicationUsers");
 
-            entity.HasKey(u => u.Id);
-            entity.Property(u => u.Id).HasColumnName("ID_ApplicationUser");
+            entity.HasKey(u => u.ID_ApplicationUser);
+            entity.Property(u => u.ID_ApplicationUser).HasColumnName("ID_ApplicationUser");
 
             entity.Property(u => u.Email).IsRequired().HasMaxLength(256);
             entity.HasIndex(u => u.Email).IsUnique();
@@ -40,8 +40,8 @@ public class ApplicationDbContext : DbContext
         {
             entity.ToTable("Employees");
 
-            entity.HasKey(e => e.Id);
-            entity.Property(e => e.Id).HasColumnName("ID_Employee");
+            entity.HasKey(e => e.ID_Employee);
+            entity.Property(e => e.ID_Employee).HasColumnName("ID_Employee");
 
             entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
             entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
@@ -52,7 +52,7 @@ public class ApplicationDbContext : DbContext
 
             entity.HasMany(e => e.WorkTasks)
                 .WithOne(t => t.Employee)
-                .HasForeignKey(t => t.EmployeeId)
+                .HasForeignKey(t => t.FK_Employee)
                 .HasConstraintName("FK_WorkTasks_Employee")
                 .OnDelete(DeleteBehavior.Restrict);
         });
@@ -61,12 +61,12 @@ public class ApplicationDbContext : DbContext
         {
             entity.ToTable("WorkTasks");
 
-            entity.HasKey(t => t.Id);
-            entity.Property(t => t.Id).HasColumnName("ID_WorkTask");
+            entity.HasKey(t => t.ID_WorkTask);
+            entity.Property(t => t.ID_WorkTask).HasColumnName("ID_WorkTask");
 
             entity.Property(t => t.Title).IsRequired().HasMaxLength(150);
             entity.Property(t => t.Description).HasMaxLength(2000);
-            entity.Property(t => t.EmployeeId).HasColumnName("FK_Employee").IsRequired();
+            entity.Property(t => t.FK_Employee).HasColumnName("FK_Employee").IsRequired();
             entity.Property(t => t.Priority).HasConversion<int>().IsRequired();
             entity.Property(t => t.Status).HasConversion<int>().IsRequired();
             entity.Property(t => t.DueDate).IsRequired();
@@ -74,7 +74,7 @@ public class ApplicationDbContext : DbContext
             entity.Property(t => t.CompletedDate);
             entity.Property(t => t.RowVersion).IsRowVersion();
 
-            entity.HasIndex(t => t.EmployeeId).HasDatabaseName("IX_WorkTasks_FK_Employee");
+            entity.HasIndex(t => t.FK_Employee).HasDatabaseName("IX_WorkTasks_FK_Employee");
             entity.HasIndex(t => t.Status).HasDatabaseName("IX_WorkTasks_Status");
             entity.HasIndex(t => t.Priority).HasDatabaseName("IX_WorkTasks_Priority");
             entity.HasIndex(t => t.DueDate).HasDatabaseName("IX_WorkTasks_DueDate");

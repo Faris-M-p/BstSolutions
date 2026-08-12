@@ -30,7 +30,7 @@ public class TaskService : ITaskService
 
         if (filter.EmployeeId.HasValue)
         {
-            query = query.Where(t => t.EmployeeId == filter.EmployeeId.Value);
+            query = query.Where(t => t.FK_Employee == filter.EmployeeId.Value);
         }
 
         if (filter.Status.HasValue)
@@ -57,10 +57,10 @@ public class TaskService : ITaskService
 
         var tasks = await query.Select(t => new TaskListItemViewModel
         {
-            Id = t.Id,
+            Id = t.ID_WorkTask,
             Title = t.Title,
             Description = t.Description,
-            EmployeeId = t.EmployeeId,
+            EmployeeId = t.FK_Employee,
             EmployeeName = t.Employee.FirstName + " " + t.Employee.LastName,
             Priority = t.Priority,
             Status = t.Status,
@@ -86,10 +86,10 @@ public class TaskService : ITaskService
 
         return new EditTaskViewModel
         {
-            Id = task.Id,
+            Id = task.ID_WorkTask,
             Title = task.Title,
             Description = task.Description,
-            EmployeeId = task.EmployeeId,
+            EmployeeId = task.FK_Employee,
             Priority = task.Priority,
             Status = task.Status,
             DueDate = task.DueDate,
@@ -107,10 +107,10 @@ public class TaskService : ITaskService
 
         return new TaskDetailsViewModel
         {
-            Id = task.Id,
+            Id = task.ID_WorkTask,
             Title = task.Title,
             Description = task.Description,
-            EmployeeId = task.EmployeeId,
+            EmployeeId = task.FK_Employee,
             EmployeeName = $"{task.Employee.FirstName} {task.Employee.LastName}",
             Priority = task.Priority,
             Status = task.Status,
@@ -138,7 +138,7 @@ public class TaskService : ITaskService
         {
             Title = model.Title.Trim(),
             Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim(),
-            EmployeeId = model.EmployeeId,
+            FK_Employee = model.EmployeeId,
             Priority = model.Priority,
             Status = WorkTaskStatus.New,
             DueDate = model.DueDate.Date,
@@ -162,7 +162,7 @@ public class TaskService : ITaskService
                 "Assigned employee was not found.",
                 "TASK_EMPLOYEE_NOT_FOUND");
 
-        if (task.EmployeeId != model.EmployeeId && !employee.IsActive)
+        if (task.FK_Employee != model.EmployeeId && !employee.IsActive)
         {
             throw new BusinessException(
                 "Only active employees can be assigned to tasks.",
@@ -171,7 +171,7 @@ public class TaskService : ITaskService
 
         task.Title = model.Title.Trim();
         task.Description = string.IsNullOrWhiteSpace(model.Description) ? null : model.Description.Trim();
-        task.EmployeeId = model.EmployeeId;
+        task.FK_Employee = model.EmployeeId;
         task.Priority = model.Priority;
         task.DueDate = model.DueDate.Date;
 

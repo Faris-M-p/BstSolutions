@@ -40,10 +40,10 @@ public class DashboardService : IDashboardService
             .Take(5)
             .Select(t => new TaskListItemViewModel
             {
-                Id = t.Id,
+                Id = t.ID_WorkTask,
                 Title = t.Title,
                 Description = t.Description,
-                EmployeeId = t.EmployeeId,
+                EmployeeId = t.FK_Employee,
                 EmployeeName = t.Employee.FirstName + " " + t.Employee.LastName,
                 Priority = t.Priority,
                 Status = t.Status,

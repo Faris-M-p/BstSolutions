@@ -26,7 +26,7 @@ public class EmployeeRepository : IEmployeeRepository
     public Task<Employee?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return _dbContext.Employees
-            .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
+            .FirstOrDefaultAsync(e => e.ID_Employee == id, cancellationToken);
     }
 
     public Task<bool> EmailExistsAsync(string email, int? excludeEmployeeId = null, CancellationToken cancellationToken = default)
@@ -36,7 +36,7 @@ public class EmployeeRepository : IEmployeeRepository
 
         if (excludeEmployeeId.HasValue)
         {
-            query = query.Where(e => e.Id != excludeEmployeeId.Value);
+            query = query.Where(e => e.ID_Employee != excludeEmployeeId.Value);
         }
 
         return query.AnyAsync(cancellationToken);

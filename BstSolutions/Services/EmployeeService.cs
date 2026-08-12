@@ -37,7 +37,7 @@ public class EmployeeService : IEmployeeService
 
         return new EditEmployeeViewModel
         {
-            Id = employee.Id,
+            Id = employee.ID_Employee,
             FirstName = employee.FirstName,
             LastName = employee.LastName,
             Email = employee.Email,
@@ -98,7 +98,7 @@ public class EmployeeService : IEmployeeService
     {
         return new EmployeeListItemViewModel
         {
-            Id = employee.Id,
+            Id = employee.ID_Employee,
             FirstName = employee.FirstName,
             LastName = employee.LastName,
             Email = employee.Email,
