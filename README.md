@@ -1,349 +1,636 @@
-# Task Management System (BstSolutions)
+# Task Management System
 
-ASP.NET Core MVC application for managing employees and work tasks.
+**Candidate:** Muhammed Faris  
+
+ASP.NET Core MVC Task Management System developed as a technical machine test.
+
+The application supports employee management, work-task assignment and lifecycle management, search/filter/sort, a dashboard, cookie authentication, AJAX form interactions, optimistic concurrency, centralized error handling, and service-layer unit tests.
 
 ---
 
 ## 1. Project overview
 
-- Employee list / create / edit (active/inactive, unique email)
-- Task create / view / edit / delete / mark completed
-- Filtering and sorting across tasks
-- Dashboard summary counts and upcoming tasks
-- Optimistic concurrency with SQL Server `RowVersion`
-- AJAX mark-complete without full page reload
+This solution demonstrates a layered ASP.NET Core MVC application:
+
+- Employee create / list / edit (including active/inactive)
+- Work task create / edit / details / delete / mark completed
+- Task assignment to employees
+- Task search, filtering, and sorting
+- Dashboard metrics and upcoming tasks
+- Server-side validation and service-layer business rules
+- Cookie-based authentication and authorization
+- AJAX (`fetch`) for login, employee/task save, and mark completed
+- Optimistic concurrency via SQL Server `ROWVERSION`
+- xUnit + Moq unit tests for service business rules
 
 ---
 
-## 2. Architecture
+## 2. Key features
 
-| Layer | Responsibility |
+| Feature | Status |
 |---|---|
-| Middleware | Request logging, `IExceptionHandler` (`AppExceptionHandler`) |
-| Controller | HTTP, model binding, ModelState, call services, return View/JSON/Redirect |
-| Service | Business rules, coordinate repositories |
-| Repository | Database access via EF Core + LINQ |
-| EF Core | ORM / persistence |
-| SQL Server | Data store |
-
-No Generic Repository, Unit of Work, MediatR, CQRS, AutoMapper, or Dapper.
+| Employee list | Implemented |
+| Create employee | Implemented |
+| Edit employee | Implemented |
+| Employee delete | Not implemented (deactivate via `IsActive`) |
+| Duplicate email validation | Implemented |
+| Task create / edit / details | Implemented |
+| Task delete | Implemented (form POST + redirect) |
+| Task assignment | Implemented |
+| Task search | Implemented |
+| Task filtering | Implemented |
+| Task sorting | Implemented |
+| Dashboard | Implemented |
+| AJAX mark completed | Implemented |
+| AJAX login / employee save / task save | Implemented |
+| Business validation (service layer) | Implemented |
+| Authentication / authorization | Implemented |
+| Anti-forgery | Implemented |
+| Global exception handling | Implemented |
+| Request logging | Implemented |
+| Optimistic concurrency (`RowVersion`) | Implemented |
+| Unit tests (service layer) | Implemented |
+| EF Core migrations | Not used (SQL master/patch scripts) |
 
 ---
 
-## 3. Dependency flow
+## 3. Technology stack
 
-```text
-HTTP Request
-    ↓
-RequestLoggingMiddleware
-    ↓
-AppExceptionHandler (IExceptionHandler)
-    ↓
-Routing / Authentication / Authorization
-    ↓
-Controller
-    ↓
-Service
-    ↓
-Repository
-    ↓
-EF Core + LINQ
-    ↓
+Verified from project files (`TargetFramework` / package references):
+
+| Area | Technology |
+|---|---|
+| Runtime | **.NET 10** (`net10.0`) |
+| Web | ASP.NET Core MVC, Razor Views |
+| Language | C# |
+| ORM | Entity Framework Core (`Microsoft.EntityFrameworkCore.SqlServer` 10.0.0) |
+| Database | SQL Server / LocalDB |
+| UI | Bootstrap (static assets under `wwwroot`) |
+| Client AJAX | JavaScript Fetch API |
+| Auth | Cookie authentication + `PasswordHasher<T>` |
+| Tests | xUnit, Moq, Microsoft.NET.Test.Sdk, coverlet.collector |
+
+> Note: The assessment brief may mention .NET 8; this repository targets **`net10.0`**.
+
+---
+
+## 4. Architecture
+
+```
+Browser (Razor Views + JavaScript)
+        ↓
+Controllers
+        ↓
+Services (business rules)
+        ↓
+Repositories
+        ↓
+Entity Framework Core
+        ↓
 SQL Server
 ```
 
-1. Controllers depend on services only (not repositories / DbContext).
-2. Services own business rules.
-3. Repositories own data access.
-4. Middleware does not contain business logic.
+| Layer | Responsibility |
+|---|---|
+| **Controller** | HTTP, model binding, anti-forgery, authorization, ModelState / JSON responses |
+| **ViewModel** | UI-specific input/output shapes; reduces over-posting vs entities |
+| **Service** | Application/business rules and orchestration |
+| **Repository** | Data access via EF Core / LINQ |
+| **EF Core** | ORM mapping, change tracking, concurrency tokens |
+| **Razor Views** | Server-rendered UI |
+| **JavaScript** | AJAX submit / mark completed without full reload where implemented |
+| **Middleware** | Request logging + global exception handling |
+
+There is no generic repository, Unit of Work, MediatR, CQRS, AutoMapper, or Dapper in this solution.
 
 ---
 
-## 4. Technology stack
+## 5. Project structure
 
-- .NET 10 / ASP.NET Core MVC
-- Entity Framework Core (SQL Server)
-- SQL Server / LocalDB
-- LINQ, Razor Views, Dependency Injection
-- SQL-based database deployment (master + patch scripts)
+```
+BstSolutions/
+├── BstSolutions/                 # ASP.NET Core MVC web application
+│   ├── Controllers/
+│   ├── Models/                   # EF entities
+│   ├── ViewModels/
+│   ├── Services/ (+ Interfaces/)
+│   ├── Repositories/ (+ Interfaces/)
+│   ├── Data/                     # ApplicationDbContext
+│   ├── Middleware/
+│   ├── Common/                   # Enums, exceptions, validation, ApiResponse
+│   ├── Views/
+│   ├── wwwroot/
+│   ├── Database/                 # SQL create/patch scripts
+│   ├── Program.cs
+│   ├── appsettings.json
+│   └── BstSolutions.slnx
+└── BstSolutions.Tests/           # xUnit tests
+    ├── Services/
+    └── Helpers/
+```
+
+| Folder | Purpose |
+|---|---|
+| `Controllers` | MVC endpoints |
+| `Models` | Database entities |
+| `ViewModels` | Screen/API-shaped models |
+| `Services` | Business logic |
+| `Repositories` | Persistence |
+| `Data` | `DbContext` configuration |
+| `Middleware` | Logging and exception handling |
+| `Common` | Shared enums, exceptions, attributes |
+| `Database` | Schema create/patch SQL |
+| `BstSolutions.Tests` | Unit tests |
+
+Solution file: `BstSolutions/BstSolutions.slnx` (includes web + test projects).
 
 ---
 
-## 5. Database Deployment
+## 6. Database design
 
-**EF Core Migrations are not used.** Schema is owned by SQL scripts under `BstSolutions/Database/`.
+### Tables
+
+**`ApplicationUsers`** (login only — separate from employees)
+
+| Column | Notes |
+|---|---|
+| `ID_ApplicationUser` | PK, identity |
+| `Email` | Unique |
+| `PasswordHash` | ASP.NET `PasswordHasher` hash |
+| `IsActive` | Bit |
+| `Role` | e.g. `Admin` |
+| `CreatedDate` | UTC default |
+
+**`Employees`**
+
+| Column | Notes |
+|---|---|
+| `ID_Employee` | PK, identity |
+| `FirstName` / `LastName` | Required |
+| `Email` | Unique |
+| `IsActive` | Default `1` |
+| `CreatedDate` | UTC default |
+
+**`WorkTasks`**
+
+| Column | Notes |
+|---|---|
+| `ID_WorkTask` | PK, identity |
+| `Title` / `Description` | Description optional |
+| `FK_Employee` | FK → `Employees.ID_Employee` |
+| `Priority` | INT 1–4 (CHECK) |
+| `Status` | INT 1–4 (CHECK) |
+| `DueDate` | `DATE` |
+| `CreatedDate` | UTC |
+| `CompletedDate` | Nullable |
+| `RowVersion` | `ROWVERSION` concurrency token |
+
+### Relationship
+
+`Employee` **1 → many** `WorkTask` (`FK_Employee`), delete behavior **Restrict**.
+
+### Indexes
+
+- `IX_WorkTasks_FK_Employee`
+- `IX_WorkTasks_Status`
+- `IX_WorkTasks_Priority`
+- `IX_WorkTasks_DueDate`
+
+### Enums (C# / DB INT)
+
+| Priority | Status |
+|---|---|
+| 1 Low, 2 Medium, 3 High, 4 Critical | 1 New, 2 InProgress, 3 Completed, 4 Cancelled |
+
+---
+
+## 7. Database setup
+
+This project uses **SQL master/patch scripts**, not EF Core migrations.
 
 ### New database
 
-1. Double-click `Database/Database-Create.bat`
-2. Runs `Database.sql` (creates `TaskManagementSystem` and applies master scripts)
-3. Demo admin (`admin@gmail.com`) is seeded with a PasswordHasher hash
-
-### Existing database
-
-1. Double-click `Database/Database-Patch.bat`
-2. Runs `Database-Patch.sql` against the existing database
-3. Only active folder `Patch.sql` entries are executed
-
-### Master vs Patch
-
-| Type | Purpose |
-|---|---|
-| **Master SQL** | Latest complete definition for a **new** database |
-| **Patch SQL** | Changes only, to upgrade an **existing** database |
-
-```text
-Update master SQL
-    ↓
-Uncomment upgrade entry in Patch.sql
-    ↓
-Run Database-Patch.bat
-    ↓
-After deploy: comment/remove completed patch
+```
+Database.sql
+   ↓
+Creates TaskManagementSystem (if missing)
+   ↓
+01_Tables → 02_Indexes → 03_SeedData
 ```
 
-### Requirements
+**Recommended (Windows / LocalDB):**
 
-- `sqlcmd` available in PATH
-- Default server: `(localdb)\MSSQLLocalDB` (matches `appsettings.json`)
+1. Ensure SQL Server LocalDB is available: `(localdb)\MSSQLLocalDB`
+2. Double-click `BstSolutions/Database/Database-Create.bat`  
+   (runs `sqlcmd` against `Database.sql`)
 
----
+### Existing database upgrades
 
-## 6. Enum representation
-
-Enums are stored as **INT** in SQL Server.
-
-### Priority
-
-| Value | Name |
-|---|---|
-| 1 | Low |
-| 2 | Medium |
-| 3 | High |
-| 4 | Critical |
-
-### WorkTaskStatus
-
-| Value | Name |
-|---|---|
-| 1 | New |
-| 2 | InProgress |
-| 3 | Completed |
-| 4 | Cancelled |
-
-Named `WorkTaskStatus` to avoid clashing with `System.Threading.Tasks.TaskStatus`.
-
----
-
-## 7. SQL / C# naming conventions
-
-| Rule | Example |
-|---|---|
-| Primary key | `ID_Employee`, `ID_WorkTask`, `ID_ApplicationUser` |
-| Foreign key | `FK_Employee` |
-| FK constraint | `FK_WorkTasks_Employee` |
-
-Entity / DB layer uses the SQL column names.  
-ViewModels / Views keep UI-friendly names (`Id`, `EmployeeId`) and map in the service layer.
-
----
-
-## 8. Concurrency
-
-Optimistic concurrency with SQL Server `RowVersion`:
-
-1. Original `RowVersion` is sent with the Edit form (hidden field).
-2. EF Core includes it in the update condition.
-3. If another user changed the row, `DbUpdateConcurrencyException` is raised.
-4. User sees a conflict message instead of a silent overwrite.
-
-```csharp
-entity.Property(t => t.RowVersion).IsRowVersion();
+```
+Database-Patch.sql
+   ↓
+Runs folder Patch.sql files only
 ```
 
+Use `Database-Patch.bat` for upgrades. Master `.sql` files remain the latest full definition for new environments.
+
 ---
 
-## 9. Validation
+## 8. Configuration
 
-### UI / ViewModel (DataAnnotations)
+Connection string key: **`DefaultConnection`**
 
-Validation lives on ViewModels. Controllers only check `ModelState.IsValid`.
+Example (LocalDB / Integrated Security — adjust for your environment):
 
-Built-in attributes used:
-
-- `[Required]`, `[StringLength]`, `[EmailAddress]`, `[Display]`, `[DataType]`, `[EnumDataType]`
-
-Custom attributes in `Common/Validation/`:
-
-| Attribute | Purpose |
-|---|---|
-| `NoScriptTags` | Blocks script / javascript content in text fields |
-| `GreaterThanZero` | Ensures IDs / selections are > 0 |
-| `DateNotInPast` | Due date cannot be before today (create task) |
-
-Example:
-
-```csharp
-[Required(ErrorMessage = "{0} is required.")]
-[StringLength(200, ErrorMessage = "{0} cannot exceed {1} characters.")]
-[Display(Name = "Search text")]
-[NoScriptTags]
-public string? Search { get; set; }
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=(localdb)\\MSSQLLocalDB;Database=TaskManagementSystem;Integrated Security=True;TrustServerCertificate=True;MultipleActiveResultSets=true"
+}
 ```
 
-### Business rules (Service layer)
+Do not commit production passwords or secrets. Use Integrated Security or user secrets / environment configuration for sensitive environments.
 
-Rules that need the database stay in services:
-
-- Duplicate employee email
-- Employee must exist / be active when assigning a task
-- Completed task cannot be deleted
-- CompletedDate set/cleared with status changes
-- Optimistic concurrency conflict
 ---
 
-## 10. Security
+## 9. How to run the application
 
-| Concern | Approach |
+1. Clone or extract the repository.
+2. Open `BstSolutions/BstSolutions.slnx` in Visual Studio (or open the folder in your IDE).
+3. Restore NuGet packages.
+4. Create the database (`Database-Create.bat` / `Database.sql`).
+5. Confirm `DefaultConnection` in `appsettings.json` / `appsettings.Development.json`.
+6. Set `BstSolutions` as the startup project.
+7. Build and run (F5 / `dotnet run --project BstSolutions`).
+
+**SDK:** .NET 10 (`net10.0`).
+
+Default route starts at **Account/Login**.
+
+---
+
+## 10. Login / authentication
+
+| Item | Detail |
 |---|---|
-| Authentication | DB users + cookie auth + ClaimsPrincipal |
-| Authorization | `[Authorize]` on create/edit/delete/complete |
-| Anti-forgery | `[ValidateAntiForgeryToken]` on POSTs |
-| Over-posting | ViewModels (not entities) |
-| SQL injection | EF Core parameterized LINQ |
-| Passwords | `PasswordHasher` (never plain text) |
+| Mechanism | Cookie authentication (`TaskManagement.Auth`) |
+| Login path | `/Account/Login` |
+| Access denied | `/Account/AccessDenied` |
+| Password storage | `PasswordHasher<ApplicationUser>` (never plain text) |
+| Protected areas | `[Authorize]` on Dashboard, Employee, Task controllers |
+| Logout | POST form in layout with anti-forgery |
+| Return URL | Supported on login (local URLs only) |
 
-### Demo login (seeded)
+### Seed / demo account
 
-| Setting | Value |
+From `Database/03_SeedData/SeedData.sql` (idempotent):
+
+| Field | Value |
 |---|---|
 | Email | `admin@gmail.com` |
 | Password | `Admin@123` |
 | Role | `Admin` |
 
-JWT and full ASP.NET Core Identity are not used.
+Login is submitted via **AJAX** (`fetch`). Invalid credentials return HTTP **409 Conflict** with `{ message }`.
+
+> `RememberMe` exists on the login ViewModel / sign-in options, but the current Login view does not render a Remember Me checkbox.
 
 ---
 
-## 11. Response and error handling
+## 11. Employee management
 
-### Exception types (`Common/Exceptions/`)
+| Action | Behavior |
+|---|---|
+| List | All employees |
+| Create | AJAX POST; sets `IsActive = true` |
+| Edit | AJAX POST; can toggle `IsActive` |
+| Delete | Not implemented |
 
-| Exception | When | HTTP |
-|---|---|---|
-| `UnauthorizedException` | Invalid login credentials | 401 |
-| `BusinessException` | Business rule failed | 400 |
-| `NotFoundException` | No data / record missing | 404 |
-| `ConflictException` | Concurrency conflict | 409 |
+**Validation / rules**
 
-All inherit from `Exception` (same pattern).
-
-### How it works
-
-```text
-NotFoundException / ConflictException / BusinessException
-    → AppExceptionHandler (if not caught in controller)
-    → status + UserMessage
-
-Controller may still catch BusinessException for MVC forms
-    → ModelState / ApiResponse
-
-Unexpected Exception
-    → AppExceptionHandler
-    → 500 + safe message only
-```
-
-### ApiResponse (AJAX)
-
-**Success**
-```json
-{ "success": true, "userMessage": "Task completed successfully.", "errorCode": null }
-```
-
-**Business failure**
-```json
-{ "success": false, "userMessage": "An employee with this email already exists.", "errorCode": "EMPLOYEE_EMAIL_EXISTS" }
-```
-
-**Unexpected (500)**
-```json
-{ "success": false, "userMessage": "Something went wrong. Please try again later." }
-```
-
-Frontend shows **UserMessage only**. Stack traces are never returned to the client.
+- Required first name, last name, email (DataAnnotations + custom attributes)
+- Unique email (service → `EMPLOYEE_EMAIL_EXISTS`)
+- Email trimmed before persistence
 
 ---
 
-## 12. Request Logging Middleware
+## 12. Task management
 
-`RequestLoggingMiddleware` logs each request:
+| Action | Behavior |
+|---|---|
+| Create | AJAX; status forced to **New** |
+| Edit | AJAX; supports status/priority/assignment/`RowVersion` |
+| Details | Server-rendered view |
+| Delete | Classic form POST → redirect + TempData (not AJAX) |
+| Mark completed | AJAX on Task Index |
 
-- Method, path, status code, duration, user (`Anonymous` if not authenticated), TraceId
-- Does **not** log passwords, tokens, cookies, Authorization headers, or bodies
+**`CompletedDate` rule** (`TaskService.ApplyStatusChange`):
 
-Example:
-```text
-HTTP POST /Task/Complete responded 200 in 145 ms for user admin@gmail.com, TraceId: 0HMK...
+- Status → **Completed**: `CompletedDate = UtcNow`
+- Status → any other value: `CompletedDate = null`
+
+---
+
+## 13. Business validation
+
+Business rules live in the **Service** layer (not only in controllers).
+
+| Rule | Error code |
+|---|---|
+| Duplicate employee email | `EMPLOYEE_EMAIL_EXISTS` |
+| Employee not found (update) | `EMPLOYEE_NOT_FOUND` |
+| Assigned employee missing | `TASK_EMPLOYEE_NOT_FOUND` |
+| Inactive employee on create / reassignment | `TASK_EMPLOYEE_INACTIVE` |
+| Task not found | `TASK_NOT_FOUND` |
+| Complete cancelled task | `TASK_INVALID_STATUS` |
+| Complete already completed task | `TASK_ALREADY_COMPLETED` |
+| Delete completed task | `TASK_COMPLETED_CANNOT_DELETE` |
+| Concurrent edit conflict | `CONCURRENCY_CONFLICT` |
+| Invalid login | `INVALID_CREDENTIALS` |
+
+Additional ViewModel rules include required title, max lengths, due date not in the past on create (`DateNotInPast`), and greater-than-zero IDs.
+
+---
+
+## 14. Search / filter / sort
+
+Implemented on Task Index via GET filter model and **composable `IQueryable`** in `TaskService` (database-side filtering/sorting).
+
+**Filters:** Employee, Status, Priority  
+
+**Search matches:** Title, Description, Employee First Name, Employee Last Name  
+
+**Sort by:** Created Date (default), Due Date, Priority, Employee Name  
+
+**Direction:** Asc / Desc  
+
+---
+
+## 15. Dashboard
+
+`DashboardService` aggregates with EF Core queries (`AsNoTracking`, counts, limited upcoming list):
+
+| Metric | Definition |
+|---|---|
+| Total Tasks | All tasks |
+| New / In Progress / Completed | Count by status |
+| Overdue | `DueDate < today` AND status not Completed/Cancelled |
+| Upcoming | Next **5** tasks with `DueDate >= today`, excluding Completed/Cancelled, ordered by DueDate |
+
+---
+
+## 16. AJAX / JavaScript
+
+AJAX (`fetch`) is used for:
+
+- Login
+- Employee Create / Edit
+- Task Create / Edit
+- Mark Completed
+
+### Mark Completed flow
+
+```
+Click Mark Completed
+ → fetch POST /Task/Complete
+ → TaskController → TaskService → TaskRepository → SQL Server
+ → JSON response
+ → UI updates status cell (no full reload)
 ```
 
-Order: `RequestLoggingMiddleware` → `UseExceptionHandler` / `AppExceptionHandler` → app pipeline
+### Typical controller JSON shapes
+
+| Outcome | Response |
+|---|---|
+| Validation failure | `400 BadRequest(ModelState)` |
+| Business failure | `409 Conflict({ message })` |
+| Success (save/login) | `200 Ok({ message, redirectUrl })` |
+| Success (complete) | `200 Ok({ message })` |
+
+Client displays ModelState errors generically into `#generalError` (no hard-coded field names). Anti-forgery token is sent in header `RequestVerificationToken`. AJAX requests also send `X-Requested-With: XMLHttpRequest`.
+
+Task **Delete** and the Task Index **filter form** remain classic full-page posts (not AJAX).
 
 ---
 
-## 13. Global exception handler
+## 17. Validation
 
-Uses ASP.NET Core `IExceptionHandler` (`Middleware/AppExceptionHandler.cs`):
+| Layer | Implementation |
+|---|---|
+| ViewModels | DataAnnotations + custom attributes (`NoScriptTags`, `DateNotInPast`, `GreaterThanZero`) |
+| Controllers | `ModelState.IsValid`; invalid AJAX posts return `BadRequest(ModelState)` |
+| Services | Domain/business rules and exceptions |
+| UI | `#generalError` for AJAX errors; Task filter uses `asp-validation-summary` |
 
-1. `UnauthorizedException` → 401
-2. `NotFoundException` → 404
-3. `ConflictException` → 409
-4. `BusinessException` → 400
-5. Unexpected → 500 + safe message
-6. AJAX → JSON `ApiResponse`; MVC → `/Account/Error`
-
-Login invalid credentials: service throws `UnauthorizedException`; `AccountController` catches it and shows the message on the Login form.
+Server-side validation always applies for posted AJAX actions. Unobtrusive jQuery validation scripts are not wired on the current AJAX forms.
 
 ---
 
-## 14. Solution structure
+## 18. Error handling
 
-```text
-BstSolutions/
-├── Controllers/
-├── Middleware/
-│   ├── RequestLoggingMiddleware.cs
-│   └── AppExceptionHandler.cs
-├── Data/
-├── Models/
-├── ViewModels/
-├── Repositories/
-├── Services/
-├── Common/
-│   ├── Enums/
-│   ├── Exceptions/
-│   ├── Responses/
-│   └── Validation/
-├── Views/
-├── wwwroot/
-├── Database/
-├── Program.cs
-└── appsettings.json
+| Component | Behavior |
+|---|---|
+| Custom exceptions | `BusinessException`, `NotFoundException`, `ConflictException`, `UnauthorizedException` |
+| Controllers | Many business failures returned as `Conflict({ message })` |
+| `AppExceptionHandler` | Maps uncaught exceptions to 401/404/409/400/500 |
+| AJAX uncaught errors | JSON `ApiResponse` (`success`, `userMessage`, `errorCode`) |
+| Non-AJAX uncaught errors | Redirect to `/Account/Error` |
+| Unexpected errors | Generic user message; details logged (no stack traces to client) |
+| `RequestLoggingMiddleware` | Logs method, path, status, duration, user, TraceId (no request bodies) |
+
+`AddProblemDetails()` is registered in `Program.cs`.
+
+---
+
+## 19. Security
+
+| Measure | Implementation |
+|---|---|
+| Authentication | Cookie auth |
+| Authorization | `[Authorize]` on protected controllers; `[AllowAnonymous]` on login/error |
+| Anti-forgery | `[ValidateAntiForgeryToken]` + header `RequestVerificationToken` |
+| Over-posting reduction | ViewModels for writes |
+| SQL injection mitigation | EF Core parameterized queries |
+| XSS mitigation | Razor encoding; `NoScriptTags` attribute on text inputs |
+| Passwords | Hashed only |
+| Cookies | HttpOnly; SecurePolicy SameAsRequest; 8-hour sliding expiration |
+
+---
+
+## 20. Concurrency
+
+Optimistic concurrency is implemented for task updates:
+
+1. `WorkTasks.RowVersion` mapped as EF concurrency token (`IsRowVersion()`).
+2. Edit form posts `RowVersion`.
+3. Service calls `SetOriginalRowVersion` before save.
+4. On `DbUpdateConcurrencyException`, service throws `ConflictException` (`CONCURRENCY_CONFLICT`).
+5. Controller returns **HTTP 409** with `{ message }` for the AJAX edit path.
+
+If two users edit the same task, the second save receives a conflict message and must refresh.
+
+---
+
+## 21. Async programming
+
+Database and service operations use async APIs, for example:
+
+- `ToListAsync`, `FirstOrDefaultAsync` / repository async methods
+- `SaveChangesAsync`
+- `CancellationToken` parameters threaded through controllers → services → repositories
+
+`CancellationToken` allows cooperative cancellation when a request is aborted.
+
+---
+
+## 22. Unit testing
+
+Project: **`BstSolutions.Tests`**
+
+| Tool | Role |
+|---|---|
+| xUnit | Test framework |
+| Moq | Mock repository interfaces |
+| Pattern | Arrange → Act → Assert |
+| Focus | Service-layer business rules (no real SQL Server) |
+
+```
+Test → Service (real) → Mock Repository
 ```
 
----
+### `EmployeeServiceTests`
 
-## 15. How to run
+- Get employees / active employees / by id
+- Create success and duplicate email
+- Update success, not found, duplicate email
+
+### `TaskServiceTests`
+
+- Create with active / missing / inactive employee
+- Update success, not found, inactive reassignment, concurrency conflict
+- Complete success / missing / cancelled / already completed
+- Delete success / completed blocked / missing
+
+Helper: `Helpers/TestDataFactory.cs`
+
+### Run tests
+
+**Visual Studio:** Test → Test Explorer → Run All  
+
+**CLI:**
 
 ```bash
-# 1. Create database
-#    Double-click BstSolutions/Database/Database-Create.bat
-
-# 2. Run app
-cd BstSolutions
-dotnet restore
-dotnet build
-dotnet run
+dotnet test BstSolutions.Tests/BstSolutions.Tests.csproj
 ```
 
-Default route: `/Account/Login`  
-After login: Dashboard
+---
+
+## 23. Design decisions
+
+### Why MVC?
+Matches the machine-test requirement for ASP.NET Core MVC and Razor Views.
+
+### Why ViewModels?
+Separate UI contracts from entities and limit over-posting.
+
+### Why Service layer?
+Keep business rules out of controllers and reusable across actions.
+
+### Why Repository?
+Isolate EF Core data access behind interfaces (also enables Moq unit tests).
+
+### Why EF Core + LINQ?
+Readable composable queries for list/filter/dashboard without raw ADO.NET.
+
+### Why AJAX?
+Login/save and Mark Completed update without full page reload; JSON error display.
+
+### Why SQL master/patch instead of migrations?
+Explicit, reviewable schema scripts for create vs upgrade (`Database.sql` / `Database-Patch.sql`).
+
+### Why unit tests at service layer?
+Verify business exceptions and state transitions independently of SQL Server.
+
+---
+
+## 24. Assessment requirement mapping
+
+| Assessment area | Implementation |
+|---|---|
+| Project structure | Controllers, Models, ViewModels, Services, Repositories, Data, Middleware, Views, Database |
+| Employee management | `EmployeeController` + `EmployeeService` + `EmployeeRepository` |
+| Task management | `TaskController` + `TaskService` + `TaskRepository` |
+| Business validation | Service exceptions + ViewModel annotations |
+| Search & filtering | `IQueryable` in `TaskService` |
+| Sorting | LINQ `OrderBy` / `OrderByDescending` |
+| Dashboard | `DashboardController` + `DashboardService` |
+| AJAX | Fetch on login, employee/task save, mark completed |
+| Repository / service | Implemented and registered in DI |
+| Async programming | Async EF / service / repository APIs |
+| Error handling | Custom exceptions + `AppExceptionHandler` + logging middleware |
+| Concurrency | `RowVersion` + `ConflictException` / HTTP 409 |
+| Security | Cookie auth, `[Authorize]`, anti-forgery, ViewModels, hashed passwords |
+| Unit testing | xUnit + Moq service tests |
+| Database deployment | SQL master/patch (not EF migrations) |
+
+---
+
+## 25. Manual testing checklist
+
+### Authentication
+- Open a protected URL while logged out → redirect to Login
+- Login with `admin@gmail.com` / `Admin@123`
+- Login with invalid credentials → error under the form
+- Logout
+
+### Employee
+- Create a valid employee
+- Create with duplicate email → business error
+- Edit name/email
+- Set employee inactive
+
+### Task
+- Create task for an active employee
+- Try assign inactive employee on create → error
+- Search / filter / sort on Task Index
+- Edit task (including status changes) and confirm `CompletedDate` behavior
+- Mark Completed via AJAX (row updates without reload)
+- Try delete a completed task → blocked
+- Delete a non-completed task
+- (Optional) Two-browser concurrency edit to see conflict message
+
+### Dashboard
+- Confirm counts and upcoming list after creating/completing tasks
+
+---
+
+## 26. Project limitations / notes
+
+| Item | Note |
+|---|---|
+| Employee hard delete | Not implemented; use `IsActive` |
+| Task delete AJAX | Not implemented; classic POST + redirect |
+| Remember Me UI | Property/sign-in support exists; checkbox not shown on Login view |
+| EF migrations | Not used |
+| Client unobtrusive validation | Not attached on current AJAX forms; server validation + JSON errors used |
+| Users vs employees | Separate tables by design |
+
+No other known core assessment gaps were identified beyond the items above.
+
+---
+
+## 27. Submission notes
+
+This solution was developed as an ASP.NET Core MVC technical machine test with emphasis on:
+
+- Clean separation of Controllers / Services / Repositories
+- Maintainable structure and ViewModels
+- Service-layer business validation
+- EF Core + LINQ query composition
+- Async data access
+- Razor UI + selective AJAX (`fetch`)
+- Centralized error handling and request logging
+- Cookie security and anti-forgery
+- Optimistic concurrency
+- Focused service-layer unit tests
+
+**Candidate:** Muhammed Faris
