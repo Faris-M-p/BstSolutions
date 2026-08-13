@@ -5,42 +5,71 @@
 
 <h1 class="h3 mb-3">Create Task</h1>
 
-<form asp-action="Create" method="post" class="col-md-8">
+<form id="taskForm" asp-action="Create" method="post" class="col-md-8">
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <div class="mb-3">
         <label asp-for="Title" class="form-label"></label>
         <input asp-for="Title" class="form-control" />
-        <span asp-validation-for="Title" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Description" class="form-label"></label>
         <textarea asp-for="Description" class="form-control" rows="4"></textarea>
-        <span asp-validation-for="Description" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="EmployeeId" class="form-label"></label>
         <select asp-for="EmployeeId" class="form-select" asp-items="ViewBag.Employees">
             <option value="">Select employee</option>
         </select>
-        <span asp-validation-for="EmployeeId" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Priority" class="form-label"></label>
         <select asp-for="Priority" class="form-select" asp-items="Html.GetEnumSelectList<BstSolutions.Common.Enums.Priority>()"></select>
-        <span asp-validation-for="Priority" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="DueDate" class="form-label"></label>
         <input asp-for="DueDate" class="form-control" type="date" />
-        <span asp-validation-for="DueDate" class="text-danger"></span>
     </div>
 
     <button type="submit" class="btn btn-primary">Save</button>
     <a class="btn btn-secondary" asp-action="Index">Cancel</a>
 </form>
+<span id="generalError" class="text-danger d-block mt-3"></span>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const taskForm = document.getElementById("taskForm");
+        const generalError = document.getElementById("generalError");
+
+        const createUrl = '@Url.Action("Create", "Task")';
+
+        taskForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            generalError.innerHTML = "";
+
+            const formData = new FormData(taskForm);
+
+            const response = await fetch(createUrl, {
+                method: "POST",
+                headers: {
+                    "RequestVerificationToken": formData.get("__RequestVerificationToken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new URLSearchParams(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                window.location.href = result.redirectUrl;
+            } else if (result.message) {
+                generalError.textContent = result.message;
+            } else {
+                generalError.innerHTML = Object.values(result)
+                    .flat()
+                    .map(error => `<div>${error}</div>`)
+                    .join("");
+            }
+        });
+    </script>
 }

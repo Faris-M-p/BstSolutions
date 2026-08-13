@@ -132,33 +132,41 @@
     }
     </tbody>
 </table>
+<span id="generalError" class="text-danger d-block mt-3"></span>
 
 @section Scripts {
     <script>
-        document.querySelectorAll('.mark-complete').forEach(function (button) {
-            button.addEventListener('click', async function () {
-                const id = this.getAttribute('data-id');
-                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-                const row = this.closest('tr');
+        const generalError = document.getElementById("generalError");
+        const markCompleteButtons = document.querySelectorAll(".mark-complete");
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute("content");
+
+        const completeUrl = '@Url.Action("Complete", "Task")';
+
+        markCompleteButtons.forEach(function (button) {
+            button.addEventListener("click", async function () {
+                const id = this.getAttribute("data-id");
+                const row = this.closest("tr");
                 const actionsCell = this.parentElement;
 
-                const response = await fetch('@Url.Action("Complete", "Task")', {
-                    method: 'POST',
+                generalError.innerHTML = "";
+
+                const response = await fetch(completeUrl, {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'RequestVerificationToken': token,
-                        'X-Requested-With': 'XMLHttpRequest'
+                        "Content-Type": "application/x-www-form-urlencoded",
+                        "RequestVerificationToken": csrfToken,
+                        "X-Requested-With": "XMLHttpRequest"
                     },
-                    body: 'id=' + encodeURIComponent(id)
+                    body: "id=" + encodeURIComponent(id)
                 });
 
                 const result = await response.json();
-                if (result.success) {
-                    row.querySelector('.task-status').textContent = 'Completed';
-                    actionsCell.querySelectorAll('.mark-complete, form').forEach(el => el.remove());
-                    alert(result.userMessage);
-                } else {
-                    alert(result.userMessage || 'Unable to complete task.');
+
+                if (response.ok) {
+                    row.querySelector(".task-status").textContent = "Completed";
+                    actionsCell.querySelectorAll(".mark-complete, form").forEach(el => el.remove());
+                } else if (result.message) {
+                    generalError.textContent = result.message;
                 }
             });
         });

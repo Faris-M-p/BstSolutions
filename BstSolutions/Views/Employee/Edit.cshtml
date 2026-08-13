@@ -5,25 +5,21 @@
 
 <h1 class="h3 mb-3">Edit Employee</h1>
 
-<form asp-action="Edit" method="post" class="col-md-6">
+<form id="employeeForm" asp-action="Edit" method="post" class="col-md-6">
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="Id" />
-    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
 
     <div class="mb-3">
         <label asp-for="FirstName" class="form-label"></label>
         <input asp-for="FirstName" class="form-control" />
-        <span asp-validation-for="FirstName" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="LastName" class="form-label"></label>
         <input asp-for="LastName" class="form-control" />
-        <span asp-validation-for="LastName" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
     </div>
     <div class="mb-3 form-check">
         <input asp-for="IsActive" class="form-check-input" />
@@ -33,7 +29,42 @@
     <button type="submit" class="btn btn-primary">Save</button>
     <a class="btn btn-secondary" asp-action="Index">Cancel</a>
 </form>
+<span id="generalError" class="text-danger d-block mt-3"></span>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const employeeForm = document.getElementById("employeeForm");
+        const generalError = document.getElementById("generalError");
+
+        const editUrl = '@Url.Action("Edit", "Employee")';
+
+        employeeForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            generalError.innerHTML = "";
+
+            const formData = new FormData(employeeForm);
+
+            const response = await fetch(editUrl, {
+                method: "POST",
+                headers: {
+                    "RequestVerificationToken": formData.get("__RequestVerificationToken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new URLSearchParams(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                window.location.href = result.redirectUrl;
+            } else if (result.message) {
+                generalError.textContent = result.message;
+            } else {
+                generalError.innerHTML = Object.values(result)
+                    .flat()
+                    .map(error => `<div>${error}</div>`)
+                    .join("");
+            }
+        });
+    </script>
 }

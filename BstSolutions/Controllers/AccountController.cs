@@ -43,8 +43,7 @@ public class AccountController : Controller
 
         if (!ModelState.IsValid)
         {
-            model.Password = string.Empty;
-            return View(model);
+            return BadRequest(ModelState);
         }
 
         try
@@ -74,17 +73,15 @@ public class AccountController : Controller
                     AllowRefresh = true
                 });
 
-            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
+            var redirectUrl = !string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl)
+                ? returnUrl
+                : Url.Action("Index", "Dashboard");
 
-            return RedirectToAction("Index", "Dashboard");
+            return Ok(new { message = "Login successful.", redirectUrl });
         }
         catch (UnauthorizedException ex)
         {
-            TempData["LoginError"] = ex.UserMessage;
-            return RedirectToAction(nameof(Login), new { returnUrl });
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 

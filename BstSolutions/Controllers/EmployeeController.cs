@@ -35,19 +35,22 @@ public class EmployeeController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return View(model);
+            return BadRequest(ModelState);
         }
 
         try
         {
             await _employeeService.CreateAsync(model, cancellationToken);
             TempData["Success"] = "Employee created successfully.";
-            return RedirectToAction(nameof(Index));
+            return Ok(new
+            {
+                message = "Employee created successfully.",
+                redirectUrl = Url.Action(nameof(Index))
+            });
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.UserMessage);
-            return View(model);
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 
@@ -69,19 +72,22 @@ public class EmployeeController : Controller
     {
         if (!ModelState.IsValid)
         {
-            return View(model);
+            return BadRequest(ModelState);
         }
 
         try
         {
             await _employeeService.UpdateAsync(model, cancellationToken);
             TempData["Success"] = "Employee updated successfully.";
-            return RedirectToAction(nameof(Index));
+            return Ok(new
+            {
+                message = "Employee updated successfully.",
+                redirectUrl = Url.Action(nameof(Index))
+            });
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.UserMessage);
-            return View(model);
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 }

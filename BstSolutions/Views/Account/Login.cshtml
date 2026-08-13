@@ -1,37 +1,63 @@
 @model LoginViewModel
 @{
     ViewData["Title"] = "Login";
+    var returnUrl = ViewData["ReturnUrl"] as string;
 }
 
 <h1 class="h3 mb-3">Login</h1>
 <p class="text-muted">Sign in with your application user account.</p>
 
-@if (TempData["LoginError"] is string loginError)
-{
-    <div class="text-danger mb-3">@loginError</div>
-}
-
-<form asp-action="Login" method="post" class="col-md-5" novalidate>
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+<form id="loginForm" asp-action="Login" method="post" class="col-md-5" novalidate>
+    @Html.AntiForgeryToken()
 
     <div class="mb-3">
         <label asp-for="Email" class="form-label"></label>
         <input asp-for="Email" class="form-control" autocomplete="username" />
-        <span asp-validation-for="Email" class="text-danger"></span>
     </div>
     <div class="mb-3">
         <label asp-for="Password" class="form-label"></label>
         <input asp-for="Password" class="form-control" autocomplete="current-password" />
-        <span asp-validation-for="Password" class="text-danger"></span>
     </div>
-    <div class="mb-3 form-check">
-        <input asp-for="RememberMe" class="form-check-input" />
-        <label asp-for="RememberMe" class="form-check-label"></label>
-    </div>
+    
 
     <button type="submit" class="btn btn-primary">Login</button>
 </form>
+<span id="generalError" class="text-danger d-block mt-3"></span>
 
 @section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+    <script>
+        const loginForm = document.getElementById("loginForm");
+        const generalError = document.getElementById("generalError");
+
+        const loginUrl = '@Url.Action("Login", "Account", new { returnUrl })';
+
+        loginForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            generalError.innerHTML = "";
+
+            const formData = new FormData(loginForm);
+
+            const response = await fetch(loginUrl, {
+                method: "POST",
+                headers: {
+                    "RequestVerificationToken": formData.get("__RequestVerificationToken"),
+                    "X-Requested-With": "XMLHttpRequest"
+                },
+                body: new URLSearchParams(formData)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                window.location.href = result.redirectUrl;
+            } else if (result.message) {
+                generalError.textContent = result.message;
+            } else {
+                generalError.innerHTML = Object.values(result)
+                    .flat()
+                    .map(error => `<div>${error}</div>`)
+                    .join("");
+            }
+        });
+    </script>
 }

@@ -1,5 +1,4 @@
 using BstSolutions.Common;
-using BstSolutions.Common.Responses;
 using BstSolutions.Services.Interfaces;
 using BstSolutions.ViewModels.Task;
 using Microsoft.AspNetCore.Authorization;
@@ -55,21 +54,22 @@ public class TaskController : Controller
     {
         if (!ModelState.IsValid)
         {
-            await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
-            return View(model);
+            return BadRequest(ModelState);
         }
 
         try
         {
             await _taskService.CreateAsync(model, cancellationToken);
             TempData["Success"] = "Task created successfully.";
-            return RedirectToAction(nameof(Index));
+            return Ok(new
+            {
+                message = "Task created successfully.",
+                redirectUrl = Url.Action(nameof(Index))
+            });
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.UserMessage);
-            await PopulateEmployeeOptionsAsync(activeOnly: true, cancellationToken);
-            return View(model);
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 
@@ -92,21 +92,22 @@ public class TaskController : Controller
     {
         if (!ModelState.IsValid)
         {
-            await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
-            return View(model);
+            return BadRequest(ModelState);
         }
 
         try
         {
             await _taskService.UpdateAsync(model, cancellationToken);
             TempData["Success"] = "Task updated successfully.";
-            return RedirectToAction(nameof(Index));
+            return Ok(new
+            {
+                message = "Task updated successfully.",
+                redirectUrl = Url.Action(nameof(Index))
+            });
         }
         catch (BusinessException ex)
         {
-            ModelState.AddModelError(string.Empty, ex.UserMessage);
-            await PopulateEmployeeOptionsAsync(activeOnly: false, cancellationToken);
-            return View(model);
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 
@@ -146,11 +147,11 @@ public class TaskController : Controller
         try
         {
             await _taskService.CompleteAsync(id, cancellationToken);
-            return Ok(ApiResponse.Ok("Task completed successfully."));
+            return Ok(new { message = "Task completed successfully." });
         }
         catch (BusinessException ex)
         {
-            return BadRequest(ApiResponse.Fail(ex.UserMessage, ex.ErrorCode));
+            return Conflict(new { message = ex.UserMessage });
         }
     }
 
